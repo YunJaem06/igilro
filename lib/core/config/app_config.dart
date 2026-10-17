@@ -1,7 +1,11 @@
 enum AppEnvironment { development, staging, production }
 
 final class AppConfig {
-  const AppConfig._({required this.environment, required this.apiBaseUri});
+  const AppConfig._({
+    required this.environment,
+    required this.apiBaseUri,
+    required this.mapboxAccessToken,
+  });
 
   factory AppConfig.fromEnvironment() {
     const isRelease = bool.fromEnvironment('dart.vm.product');
@@ -10,16 +14,19 @@ final class AppConfig {
       defaultValue: isRelease ? 'production' : 'development',
     );
     const apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+    const mapboxAccessToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
 
     return AppConfig.fromValues(
       environment: environment,
       apiBaseUrl: apiBaseUrl,
+      mapboxAccessToken: mapboxAccessToken,
     );
   }
 
   factory AppConfig.fromValues({
     required String environment,
     required String apiBaseUrl,
+    String mapboxAccessToken = '',
   }) {
     final appEnvironment = switch (environment) {
       'development' => AppEnvironment.development,
@@ -62,12 +69,20 @@ final class AppConfig {
       );
     }
 
+    final token = mapboxAccessToken.trim();
+    if (token.isNotEmpty &&
+        !RegExp(r'^pk\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$').hasMatch(token)) {
+      throw ArgumentError('MAPBOX_ACCESS_TOKEN must be a public pk. token.');
+    }
+
     return AppConfig._(
       environment: appEnvironment,
       apiBaseUri: uri.replace(path: ''),
+      mapboxAccessToken: token,
     );
   }
 
   final AppEnvironment environment;
   final Uri apiBaseUri;
+  final String mapboxAccessToken;
 }

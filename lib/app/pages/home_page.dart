@@ -1,42 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class HomePage extends StatelessWidget {
+import '../../features/location/presentation/widgets/current_location_control.dart';
+import '../../features/map/presentation/providers/map_notifier.dart';
+import '../../features/map/presentation/widgets/map_canvas.dart';
+
+/// Composes map and location features without feature-to-feature dependencies.
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text('이길로')),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.route_rounded,
-                    size: 64,
-                    color: theme.colorScheme.primary,
-                    semanticLabel: '이길로',
-                  ),
-                  const SizedBox(height: 24),
-                  Text('나에게 맞는 길, 이길로', style: theme.textTheme.headlineMedium),
-                  const SizedBox(height: 12),
-                  Text(
-                    '그늘과 햇빛, 주변 환경까지.\n원하는 길을 골라 걸어요.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+        child: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            children: [
+              const Expanded(child: MapCanvas()),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight * 0.45,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '나에게 맞는 길, 이길로',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        CurrentLocationControl(
+                          onLocated: (fix) => ref
+                              .read(mapProvider.notifier)
+                              .focusOn(fix.coordinate),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
