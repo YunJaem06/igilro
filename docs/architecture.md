@@ -2,7 +2,7 @@
 
 ## 현재 범위
 
-Phase 1은 앱 조립, 라우팅, 테마, 환경 설정, 통신 오류 경계, 코드 생성과 테스트를 구성한다. 지도, 위치, 장소 검색, 경로 검색 기능은 다음 단계에서 추가한다. 기능의 역할이 생기기 전에는 빈 Repository, UseCase, Notifier를 만들지 않는다.
+Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기능을 추가했다. Phase 3에서는 출발지·도착지의 지도 선택과 핀 표시를 먼저 구현했다. 장소명 검색·도보 경로 API는 서버 계약이 확정되면 추가한다. 기능의 역할이 생기기 전에는 빈 Repository, UseCase, Notifier를 만들지 않는다.
 
 ## 현재 파일과 책임
 
@@ -14,7 +14,8 @@ Phase 1은 앱 조립, 라우팅, 테마, 환경 설정, 통신 오류 경계, �
 | `app/di/app_providers.dart` | 환경 설정, Dio와 DioClient 생성 및 수명 관리 |
 | `app/router/` | 이름을 가진 경로, GoRouter 생성·해제, 오류 경로 복구 |
 | `app/theme/app_theme.dart` | 공통 Material 3 밝은 테마와 어두운 테마 |
-| `app/pages/home_page.dart` | 초기 앱 화면; 네트워크와 비즈니스 로직 없음 |
+| `app/pages/home_page.dart` | 지도/위치/경로 입력 View 조립, 위치 성공과 지도 터치를 선택 상태로 연결, Domain 좌표를 지도 렌더링 값으로 변환 |
+| `app/di/location_dependencies.dart` | 위치 Repository 구현체, 플랫폼 DataSource와 Mapper 조립 |
 | `core/config/app_config.dart` | 개발·스테이징·운영 환경과 API 서버 origin 검증 |
 | `core/network/dio_client.dart` | JSON 통신 설정, GET/POST, 요청 취소, 통신 예외 변환 |
 | `core/network/api_error_dto.dart` | 공통 서버 오류 JSON의 code/requestId 역직렬화 |
@@ -22,6 +23,20 @@ Phase 1은 앱 조립, 라우팅, 테마, 환경 설정, 통신 오류 경계, �
 | `core/network/api_exception.dart` | DataSource에서 다루는 통신 경계 예외 |
 | `core/error/failure.dart` | 불변 오류 값; Dio·Flutter에 의존하지 않음 |
 | `core/error/result.dart` | 향후 Repository/UseCase의 성공·실패 반환 계약 |
+| `core/geo/geo_coordinate.dart` | SDK·플랫폼에 독립적인 공통 좌표 값 |
+| `features/map/presentation/state/map_state.dart` | 지도 로딩 상태, 카메라 목표, 현재 위치, 재생성 세션의 불변 값 |
+| `features/map/presentation/providers/map_notifier.dart` | 준비/실패/재시도/현재 위치로 이동하는 동기 상태 동작 |
+| `features/map/presentation/adapters/mapbox_controller.dart` | SDK 좌표 변환, 명령 순서 보장, 카메라·마커 제어 |
+| `features/map/presentation/widgets/` | 네이티브 지도의 생성/해제, 로딩·실패 화면; 테스트 시 surface 교체 |
+| `features/location/domain/` | 위치 값과 접근 계약, 서비스/권한/획득 순서, 오류에 맞는 설정 복구 |
+| `features/location/data/` | 주입된 GeolocatorPlatform 호출, 위치 값 검증/변환, 예상 플랫폼 오류 변환 |
+| `features/location/presentation/` | AsyncNotifier 상태, 위치 버튼·안내, 설정 복귀 시 재요청 |
+| `features/route_search/domain/entities/` | 좌표와 선택 출처, 출발지/도착지 값, 서로 다른 두 지점이 준비됐는지 판단 |
+| `features/route_search/presentation/state/` | 확정된 두 지점과 선택 중인 대상/후보를 구분하는 불변 상태 |
+| `features/route_search/presentation/providers/route_selection_notifier.dart` | 선택 시작·미리보기·확정·취소·현재 위치 사용·교환·삭제 |
+| `features/route_search/presentation/widgets/route_selection_panel.dart` | 선택 입력과 안내, 지도 준비 상태에 따른 선택 확정/두 지점 보기 버튼 |
+| `features/map/presentation/state/map_marker.dart` | 경로 Domain에 의존하지 않는 좌표와 마커 역할의 렌더링 입력 |
+| `features/map/presentation/adapters/map_pin_image.dart` | 코드로 그린 출발/도착/선택 핀을 네이티브 annotation 이미지로 변환 |
 
 `*.g.dart`, `*.freezed.dart`는 생성된 파일이며 직접 수정하지 않는다. build.yaml에서 Freezed의 출력 포맷을 활성화한다. 생성 결과와 pubspec.lock을 저장소에 포함한다.
 
@@ -81,6 +96,14 @@ Phase 1의 appConfigProvider는 bootstrap에서 반드시 override한다. dioPro
 
 공통 객체는 앱 수명 동안 유지하므로 keepAlive를 사용한다. 이후 화면 Notifier는 기본 자동 해제를 우선 사용하고, 요청 취소·SDK controller 해제를 각 소유자의 수명에 연결한다. Provider 선언은 불변 의존성 정의이며, 실제 객체와 상태는 컨테이너별로 생성된다.
 
+Phase 2의 locationRepositoryProvider는 bootstrap에서 Data 구현체로 override한다. GetCurrentLocationUseCase가 서비스 → 권한 확인 → 필요 시 요청 → 위치 획득 순서를 소유한다. LocationNotifier는 초기화 시 권한을 요청하지 않고, 버튼 동작을 받아 AsyncValue<LocationFix?>를 갱신한다. AsyncValue가 로딩·오류를 표현하므로 별도 LocationState에 같은 필드를 중복하지 않는다. 진행 중 중복 동작을 막고 해제 후 도착한 응답은 무시한다.
+
+MapNotifier는 SDK 객체를 갖지 않는다. MapboxSurface가 MapboxController를 소유하고 해제하며, 카메라 초기 viewport와 이후 이동 명령을 구분한다. 카메라 revision은 동일 좌표에 대한 재중앙 이동을 지원하고 session은 지도 재시도 시 네이티브 surface를 다시 만든다. 위치와 지도 feature는 서로 import하지 않는다. HomePage가 위치 성공을 MapNotifier 동작으로 연결한다. 지도 로직에 서버 Repository나 의미 없는 UseCase를 만들지 않는다.
+
+RouteSelectionNotifier는 확정된 RouteEndpoints와 선택 중인 candidate를 분리한다. 지도 터치는 후보만 갱신하고 확인 동작이 해당 지점만 확정한다. 취소는 기존 위치를 보존한다. 현재 위치를 획득하는 동안 도착지를 선택해도 도착지 후보가 유지된다. RouteEndpoints가 완전성·동일 좌표 여부를 판단하며, 단순 값 편집을 위한 위임 UseCase는 만들지 않는다. 서버 검색 동작은 향후 UseCase/Repository/DataSource로 추가한다.
+
+HomePage는 경로 선택의 좌표·역할을 MapMarker로 변환해 MapCanvas에 전달한다. 지도 feature는 route_search를 import하지 않는다. 확정된 지점 변경은 MapNotifier.framePoints로 연결하며, 후보 위치 변경은 카메라를 이동시키지 않는다. MapboxController는 마커 갱신과 카메라 명령을 분리하고 실제 지도 크기에 맞는 padding으로 두 지점을 맞춘다. Mapbox 3의 TapInteraction.onMap을 네이티브 map 수명에 등록한다. SDK annotation/controller는 순수 상태에 저장하지 않는다.
+
 ## 오류 경계
 
 ```text
@@ -99,7 +122,7 @@ DioException -> DioClient -> ApiException(Failure)
 
 ## 테스트
 
-현재 테스트는 환경 설정·포트 유효성, 실제 Dio 파이프라인의 가짜 HTTP adapter, 오류 변환, Provider override와 해제, 화면 진입·경로 복구·작은 화면의 큰 글꼴을 검증한다. 외부 서버 호출은 없다.
+현재 Unit/Widget 테스트는 환경 설정, Dio 오류 경계, 위치 Mapper/Repository/UseCase, Notifier 중복 요청·해제·재시도, 권한 거부 복구, 지도 재생성, 좌표 순서, 화면·라우팅·큰 글꼴을 검증한다. 경로 입력은 선택 확정/취소, 교환/삭제, 동일 위치 검증, 비동기 현재 위치 획득 중 도착지 후보 보존, 지도 로드 실패/재시도와 마커 연결을 검증한다. 외부 서버 호출은 없다. integration_test/map_location_test.dart는 실제 Mapbox 스타일 로드, 위치 획득, SDK dispatch를 통한 네이티브 클릭 이벤트 처리, 도착지 선택·확정과 실제 카메라 영역의 두 좌표 포함을 검증한다. 물리적인 터치 입력과 권한 다이얼로그는 기기에서 별도로 확인한다.
 
 기능별로 DTO/Mapper, Repository(Fake DataSource), UseCase(Fake Repository), Notifier(Provider override), Widget 테스트를 추가한다. Mapbox·위치 권한·실제 서버 연결은 기기 Integration Test로 확인한다. 서버의 공간 데이터 계산은 서버 테스트 책임이다.
 
