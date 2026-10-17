@@ -14,6 +14,9 @@ enum FailureType {
   rateLimited,
   server,
   invalidData,
+  permissionDenied,
+  permissionDeniedForever,
+  serviceDisabled,
   unexpected,
 }
 
