@@ -2,7 +2,7 @@
 
 ## 현재 범위
 
-Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기능을 추가했다. Phase 3에서는 출발지·도착지의 지도 선택과 핀 표시를 먼저 구현했다. 장소명 검색·도보 경로 API는 서버 계약이 확정되면 추가한다. 기능의 역할이 생기기 전에는 빈 Repository, UseCase, Notifier를 만들지 않는다.
+Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기능을 추가했다. Phase 3에서는 출발지·도착지의 지도 선택과 핀 표시, 선택 좌표로 기본 도보 경로를 검색하는 API 흐름과 경로선·전체 경로 카메라 조정을 연결했다. 장소명 검색은 이후 작업이다. 기능의 역할이 생기기 전에는 빈 Repository, UseCase, Notifier를 만들지 않는다.
 
 ## 현재 파일과 책임
 
@@ -16,25 +16,30 @@ Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기
 | `app/theme/app_theme.dart` | 공통 Material 3 밝은 테마와 어두운 테마 |
 | `app/pages/home_page.dart` | 지도/위치/경로 입력 View 조립, 위치 성공과 지도 터치를 선택 상태로 연결, Domain 좌표를 지도 렌더링 값으로 변환 |
 | `app/di/location_dependencies.dart` | 위치 Repository 구현체, 플랫폼 DataSource와 Mapper 조립 |
+| `app/di/route_dependencies.dart` | 경로 검색 Repository 구현체, HTTP DataSource와 Mapper 조립 |
 | `core/config/app_config.dart` | 개발·스테이징·운영 환경과 API 서버 origin 검증 |
 | `core/network/dio_client.dart` | JSON 통신 설정, GET/POST, 요청 취소, 통신 예외 변환 |
 | `core/network/api_error_dto.dart` | 공통 서버 오류 JSON의 code/requestId 역직렬화 |
 | `core/network/network_error_mapper.dart` | HTTP 상태와 Dio 오류를 기술에 독립적인 Failure로 변환 |
 | `core/network/api_exception.dart` | DataSource에서 다루는 통신 경계 예외 |
 | `core/error/failure.dart` | 불변 오류 값; Dio·Flutter에 의존하지 않음 |
-| `core/error/result.dart` | 향후 Repository/UseCase의 성공·실패 반환 계약 |
+| `core/error/result.dart` | Repository/UseCase의 성공·실패 반환 계약 |
 | `core/geo/geo_coordinate.dart` | SDK·플랫폼에 독립적인 공통 좌표 값 |
 | `features/map/presentation/state/map_state.dart` | 지도 로딩 상태, 카메라 목표, 현재 위치, 재생성 세션의 불변 값 |
 | `features/map/presentation/providers/map_notifier.dart` | 준비/실패/재시도/현재 위치로 이동하는 동기 상태 동작 |
-| `features/map/presentation/adapters/mapbox_controller.dart` | SDK 좌표 변환, 명령 순서 보장, 카메라·마커 제어 |
+| `features/map/presentation/adapters/mapbox_controller.dart` | SDK 좌표 변환, 명령 순서 보장, 카메라·마커·경로선 제어 |
 | `features/map/presentation/widgets/` | 네이티브 지도의 생성/해제, 로딩·실패 화면; 테스트 시 surface 교체 |
 | `features/location/domain/` | 위치 값과 접근 계약, 서비스/권한/획득 순서, 오류에 맞는 설정 복구 |
 | `features/location/data/` | 주입된 GeolocatorPlatform 호출, 위치 값 검증/변환, 예상 플랫폼 오류 변환 |
 | `features/location/presentation/` | AsyncNotifier 상태, 위치 버튼·안내, 설정 복귀 시 재요청 |
-| `features/route_search/domain/entities/` | 좌표와 선택 출처, 출발지/도착지 값, 서로 다른 두 지점이 준비됐는지 판단 |
+| `features/route_search/domain/entities/` | 출발·도착 좌표와 선택 출처, 경로 요청·결과, 경로 형상·스냅·환경 평가 값 |
+| `features/route_search/domain/usecases/search_route_use_case.dart` | 확정 좌표 검증과 UTC 요청 구성, Repository 호출·취소 |
+| `features/route_search/data/` | 경로 HTTP 요청, DTO 역직렬화와 검증·Domain 변환, 요청 취소·오류 변환 |
 | `features/route_search/presentation/state/` | 확정된 두 지점과 선택 중인 대상/후보를 구분하는 불변 상태 |
 | `features/route_search/presentation/providers/route_selection_notifier.dart` | 선택 시작·미리보기·확정·취소·현재 위치 사용·교환·삭제 |
+| `features/route_search/presentation/providers/route_search_notifier.dart` | 명시적 검색, 로딩·성공·실패 상태, 입력 변경 시 취소와 늦은 응답 무시 |
 | `features/route_search/presentation/widgets/route_selection_panel.dart` | 선택 입력과 안내, 지도 준비 상태에 따른 선택 확정/두 지점 보기 버튼 |
+| `features/route_search/presentation/widgets/route_search_control.dart` | 검색·재시도 버튼, 시간·거리·스냅 위치·접근 거리와 출처 표시 |
 | `features/map/presentation/state/map_marker.dart` | 경로 Domain에 의존하지 않는 좌표와 마커 역할의 렌더링 입력 |
 | `features/map/presentation/adapters/map_pin_image.dart` | 코드로 그린 출발/도착/선택 핀을 네이티브 annotation 이미지로 변환 |
 
@@ -100,9 +105,17 @@ Phase 2의 locationRepositoryProvider는 bootstrap에서 Data 구현체로 overr
 
 MapNotifier는 SDK 객체를 갖지 않는다. MapboxSurface가 MapboxController를 소유하고 해제하며, 카메라 초기 viewport와 이후 이동 명령을 구분한다. 카메라 revision은 동일 좌표에 대한 재중앙 이동을 지원하고 session은 지도 재시도 시 네이티브 surface를 다시 만든다. 위치와 지도 feature는 서로 import하지 않는다. HomePage가 위치 성공을 MapNotifier 동작으로 연결한다. 지도 로직에 서버 Repository나 의미 없는 UseCase를 만들지 않는다.
 
-RouteSelectionNotifier는 확정된 RouteEndpoints와 선택 중인 candidate를 분리한다. 지도 터치는 후보만 갱신하고 확인 동작이 해당 지점만 확정한다. 취소는 기존 위치를 보존한다. 현재 위치를 획득하는 동안 도착지를 선택해도 도착지 후보가 유지된다. RouteEndpoints가 완전성·동일 좌표 여부를 판단하며, 단순 값 편집을 위한 위임 UseCase는 만들지 않는다. 서버 검색 동작은 향후 UseCase/Repository/DataSource로 추가한다.
+RouteSelectionNotifier는 확정된 RouteEndpoints와 선택 중인 candidate를 분리한다. 지도 터치는 후보만 갱신하고 확인 동작이 해당 지점만 확정한다. 취소는 기존 위치를 보존한다. 현재 위치를 획득하는 동안 도착지를 선택해도 도착지 후보가 유지된다. RouteEndpoints가 완전성·동일 좌표 여부를 판단하며, 단순 값 편집을 위한 위임 UseCase는 만들지 않는다. 서버 검색은 별도의 UseCase/Repository/DataSource가 담당한다.
+
+기본 경로 검색은 RouteSearchNotifier → SearchRouteUseCase → RouteRepository → RouteRepositoryImpl → RouteRemoteDataSource → DioClient로 실행한다. UseCase는 확정된 두 좌표의 존재·범위·동일 위치 여부를 확인하고 UTC 출발 시각의 RouteQuery를 구성한다. app/di/route_dependencies.dart가 구현체를 만들고 bootstrap이 기능의 Repository Provider 계약을 override한다. 기능은 app을 import하지 않는다.
+
+RouteMapper는 요청에 walking/fastest와 정의된 필드만 포함하고, 성공 DTO를 경로·스냅·버전·출처·그늘 평가 Entity로 변환한다. GeoJSON의 경도/위도 순서와 필수 구조, 유한 좌표·거리, 정수 시간·개수, 비율 범위와 평가 시각을 검증한다. 선택 좌표는 RouteQuery에 유지하고 실제 경로 끝점과 접근 거리는 RouteSnapping에 별도로 보존한다. 미평가 지표의 null을 0으로 대체하지 않으며 버전 문자열을 해석하지 않는다. 응답의 미지 필드는 허용해 서버 확장을 수용한다.
+
+RouteSearchNotifier는 명시적 버튼 동작에서만 검색한다. 확정 좌표를 관찰하여 변경 시 진행 중 요청과 결과를 정리하고 revision으로 늦은 응답을 무시한다. 지도 후보 미리보기는 확정 좌표를 바꾸지 않으므로 기존 결과를 보존한다. RouteSearchControl은 선택 중에도 구독을 유지하여 패널을 숨겼다는 이유로 결과를 잃지 않는다. 취소는 Domain Repository의 동작으로 노출하고 실제 CancelToken은 Data 계층에만 둔다.
 
 HomePage는 경로 선택의 좌표·역할을 MapMarker로 변환해 MapCanvas에 전달한다. 지도 feature는 route_search를 import하지 않는다. 확정된 지점 변경은 MapNotifier.framePoints로 연결하며, 후보 위치 변경은 카메라를 이동시키지 않는다. MapboxController는 마커 갱신과 카메라 명령을 분리하고 실제 지도 크기에 맞는 padding으로 두 지점을 맞춘다. Mapbox 3의 TapInteraction.onMap을 네이티브 map 수명에 등록한다. SDK annotation/controller는 순수 상태에 저장하지 않는다.
+
+검색 결과도 HomePage가 조립한다. 성공 결과의 path를 GeoCoordinate 목록인 MapCanvas.routePath로 전달하고 모든 경로 좌표와 입력 핀을 MapNotifier.framePoints에 전달한다. 경로 Domain 모델이나 API DTO를 지도 feature로 넘기지 않는다. 로딩·오류·입력 변경으로 결과가 사라지면 빈 경로를 전달해 이전 선을 제거한다. MapboxController는 전용 PolylineAnnotationManager를 위치·핀보다 먼저 만들고 서버의 스냅 지점 사이 형상만 그린다. 스타일 재로딩은 기존 manager를 제거하고 캐시를 초기화해 같은 경로·마커를 다시 적용한다. MapboxSurface는 프레임 안의 변경을 모아 레이아웃 이후 최신 지도 크기로 SDK 명령을 실행하고, 결과 패널이나 화면 크기 변경 시 전체 범위를 다시 맞춘다.
 
 ## 오류 경계
 
