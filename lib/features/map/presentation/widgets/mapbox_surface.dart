@@ -16,6 +16,7 @@ class MapboxSurface extends StatefulWidget {
     super.key,
     required this.state,
     required this.markers,
+    this.routePath = const [],
     this.onCoordinateTapped,
     this.onMapCreated,
     required this.onReady,
@@ -24,6 +25,7 @@ class MapboxSurface extends StatefulWidget {
 
   final MapState state;
   final List<MapMarker> markers;
+  final List<GeoCoordinate> routePath;
   final ValueChanged<GeoCoordinate>? onCoordinateTapped;
 
   /// Optional observer for device tests; the surface still owns SDK lifetime.
@@ -39,6 +41,8 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
   MapboxController? _controller;
   Timer? _loadingTimeout;
   bool _styleReady = false;
+  bool _applyScheduled = false;
+  bool _moveCameraPending = false;
   ui.Size _viewportSize = ui.Size.zero;
   late final CameraViewportState _initialViewport;
 
@@ -62,9 +66,27 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
     final moveCamera =
         oldWidget.state.cameraRevision != widget.state.cameraRevision;
     if (_styleReady &&
-        (moveCamera || !listEquals(oldWidget.markers, widget.markers))) {
-      unawaited(_apply(moveCamera: moveCamera));
+        (moveCamera ||
+            !listEquals(oldWidget.markers, widget.markers) ||
+            !listEquals(oldWidget.routePath, widget.routePath))) {
+      _scheduleApply(moveCamera: moveCamera);
     }
+  }
+
+  void _scheduleApply({required bool moveCamera}) {
+    _moveCameraPending |= moveCamera;
+    if (_applyScheduled) return;
+    _applyScheduled = true;
+    // The result panel can resize the native map in this same frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _applyScheduled = false;
+      final moveCamera = _moveCameraPending;
+      _moveCameraPending = false;
+      if (mounted && _styleReady) {
+        unawaited(_apply(moveCamera: moveCamera));
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   Future<void> _apply({required bool moveCamera}) async {
@@ -72,6 +94,7 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
       await _controller?.apply(
         widget.state,
         widget.markers,
+        routePath: widget.routePath,
         moveCamera: moveCamera,
         viewportSize: _viewportSize,
       );
@@ -81,13 +104,17 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
   }
 
   Future<void> _onStyleLoaded() async {
+    _styleReady = false;
     try {
       await _controller?.initialize();
+      if (!mounted) return;
+      await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return;
       _styleReady = true;
       await _controller?.apply(
         widget.state,
         widget.markers,
+        routePath: widget.routePath,
         moveCamera: true,
         viewportSize: _viewportSize,
       );
@@ -102,6 +129,11 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      if (_styleReady &&
+          _viewportSize != constraints.biggest &&
+          widget.state.framedCoordinates.isNotEmpty) {
+        _scheduleApply(moveCamera: true);
+      }
       _viewportSize = constraints.biggest;
       return MapWidget(
         viewport: _initialViewport,

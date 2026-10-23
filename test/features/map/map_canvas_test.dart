@@ -20,10 +20,11 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             body: MapCanvas(
-              surfaceBuilder: (state, markers, onTap, ready, failure) {
-                sessions.add(state.session);
-                return const ColoredBox(color: Colors.green);
-              },
+              surfaceBuilder:
+                  (state, markers, routePath, onTap, ready, failure) {
+                    sessions.add(state.session);
+                    return const ColoredBox(color: Colors.green);
+                  },
             ),
           ),
         ),

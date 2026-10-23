@@ -12,16 +12,35 @@ import 'map_pin_image.dart';
 final class MapboxController {
   MapboxController(this._map);
 
+  static const routeLayerId = 'igilro.route';
+
   final MapboxMap _map;
+  PolylineAnnotationManager? _routes;
   CircleAnnotationManager? _locations;
   PointAnnotationManager? _pins;
   final _pinImages = <MapMarkerRole, Uint8List>{};
   GeoCoordinate? _lastLocation;
   List<MapMarker> _lastMarkers = const [];
+  List<GeoCoordinate> _lastRoutePath = const [];
   bool _disposed = false;
   Future<void> _pending = Future.value();
 
   Future<void> initialize() => _enqueue(() async {
+    // A style reload needs fresh managers and rendering caches.
+    for (final id in [_routes?.id, _locations?.id, _pins?.id].nonNulls) {
+      if (_disposed) return;
+      await _map.annotations.removeAnnotationManagerById(id);
+    }
+    _lastLocation = null;
+    _lastMarkers = const [];
+    _lastRoutePath = const [];
+    // Create the route below location and endpoint annotations.
+    _routes = await _map.annotations.createPolylineAnnotationManager(
+      id: routeLayerId,
+    );
+    if (_disposed) return;
+    await _routes!.setLineCap(LineCap.ROUND);
+    if (_disposed) return;
     _locations = await _map.annotations.createCircleAnnotationManager();
     if (_disposed) return;
     _pins = await _map.annotations.createPointAnnotationManager();
@@ -42,6 +61,7 @@ final class MapboxController {
   Future<void> apply(
     MapState state,
     List<MapMarker> markers, {
+    List<GeoCoordinate> routePath = const [],
     required bool moveCamera,
     required ui.Size viewportSize,
   }) => _enqueue(() async {
@@ -69,10 +89,36 @@ final class MapboxController {
       await _map.flyTo(camera, MapAnimationOptions(duration: 600));
     }
     if (_disposed) return;
+    await _showRoute(routePath);
+    if (_disposed) return;
     await _showLocation(state.currentLocation);
     if (_disposed) return;
     await _showPins(markers);
   });
+
+  Future<void> _showRoute(List<GeoCoordinate> path) async {
+    final routes = _routes;
+    if (routes == null || _disposed || listEquals(path, _lastRoutePath)) return;
+    await routes.deleteAll();
+    if (_disposed) return;
+    if (path.length >= 2) {
+      await routes.create(
+        PolylineAnnotationOptions(
+          geometry: LineString(
+            coordinates: path
+                .map((point) => Position(point.longitude, point.latitude))
+                .toList(growable: false),
+          ),
+          lineColor: 0xFF23785C,
+          lineWidth: 6,
+          lineBorderColor: 0xFFFFFFFF,
+          lineBorderWidth: 2,
+          lineJoin: LineJoin.ROUND,
+        ),
+      );
+    }
+    _lastRoutePath = List.unmodifiable(path);
+  }
 
   Future<void> _showLocation(GeoCoordinate? coordinate) async {
     final locations = _locations;
@@ -141,6 +187,7 @@ final class MapboxController {
 
   void dispose() {
     _disposed = true;
+    _routes = null;
     _locations = null;
     _pins = null;
     _pinImages.clear();

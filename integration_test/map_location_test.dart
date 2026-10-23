@@ -6,19 +6,27 @@ import 'package:integration_test/integration_test.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:igilro/app/di/location_dependencies.dart';
 import 'package:igilro/core/config/app_config.dart';
+import 'package:igilro/core/error/result.dart';
+import 'package:igilro/core/geo/geo_coordinate.dart';
 import 'package:igilro/features/location/presentation/providers/location_providers.dart';
 import 'package:igilro/app/pages/home_page.dart';
 import 'package:igilro/app/theme/app_theme.dart';
 import 'package:igilro/features/location/presentation/providers/location_notifier.dart';
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
+import 'package:igilro/features/map/presentation/adapters/mapbox_controller.dart';
 import 'package:igilro/features/map/presentation/state/map_state.dart';
 import 'package:igilro/features/map/presentation/widgets/mapbox_surface.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_selection_notifier.dart';
+import 'package:igilro/features/route_search/domain/entities/route_query.dart';
+import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
+import 'package:igilro/features/route_search/presentation/state/route_selection_state.dart';
+
+import '../test/helpers/fake_route_repository.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('native map loads and route endpoints can be selected', (
+  testWidgets('native routes fit the camera and survive reloads', (
     tester,
   ) async {
     final config = AppConfig.fromEnvironment();
@@ -26,10 +34,13 @@ void main() {
     MapboxOptions.setAccessToken(config.mapboxAccessToken);
     MapboxMapsOptions.setLanguage('ko');
     MapboxMap? nativeMap;
+    final routeRepository = FakeRouteRepository();
+    var styleReadyCount = 0;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           mapConfiguredProvider.overrideWithValue(true),
+          routeRepositoryProvider.overrideWithValue(routeRepository),
           locationRepositoryProvider.overrideWith(
             (ref) => createLocationRepository(),
           ),
@@ -41,16 +52,21 @@ void main() {
           supportedLocales: const [Locale('ko')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           home: HomePage(
-            mapSurfaceBuilder: (state, markers, onTap, ready, failure) =>
-                MapboxSurface(
-                  key: ValueKey(state.session),
-                  state: state,
-                  markers: markers,
-                  onCoordinateTapped: onTap,
-                  onReady: ready,
-                  onFailure: failure,
-                  onMapCreated: (map) => nativeMap = map,
-                ),
+            mapSurfaceBuilder:
+                (state, markers, routePath, onTap, ready, failure) =>
+                    MapboxSurface(
+                      key: ValueKey(state.session),
+                      state: state,
+                      markers: markers,
+                      routePath: routePath,
+                      onCoordinateTapped: onTap,
+                      onReady: () {
+                        styleReadyCount++;
+                        ready();
+                      },
+                      onFailure: failure,
+                      onMapCreated: (map) => nativeMap = map,
+                    ),
           ),
         ),
       ),
@@ -154,7 +170,101 @@ void main() {
     // A host-side fixture may capture the actual native pins for visual QA.
     debugPrint('IGILRO_ENDPOINTS_READY');
     await tester.pump(const Duration(seconds: 2));
+
+    // Use a deterministic route fixture: this test exercises native rendering,
+    // not server availability or the server's graph calculation.
+    final result = sampleRouteResult(
+      RouteQuery(
+        origin: endpoints.origin!.coordinate,
+        destination: endpoints.destination!.coordinate,
+        departureAt: DateTime.now().toUtc(),
+      ),
+    );
+    final path = [
+      endpoints.origin!.coordinate,
+      GeoCoordinate(
+        latitude: endpoints.origin!.coordinate.latitude + 0.005,
+        longitude: endpoints.origin!.coordinate.longitude + 0.005,
+      ),
+      endpoints.destination!.coordinate,
+    ];
+    routeRepository.response = Result.success(
+      result.copyWith(routes: [result.routes.single.copyWith(path: path)]),
+    );
+    await tester.ensureVisible(find.text('경로 검색'));
+    await tester.tap(find.text('경로 검색'));
+    await tester.pump(const Duration(seconds: 2));
+    await _waitForRoute(tester, nativeMap!, visible: true);
+    await _expectRouteInCamera(nativeMap!, path);
+
+    // Recreating style managers must restore an unchanged route and its pins.
+    final readyBeforeReload = styleReadyCount;
+    await nativeMap!.loadStyleURI(MapboxStyles.STANDARD);
+    await _waitUntil(tester, () => styleReadyCount > readyBeforeReload);
+    await tester.pump(const Duration(seconds: 1));
+    await _waitForRoute(tester, nativeMap!, visible: true);
+    await _expectRouteInCamera(nativeMap!, path);
+
+    container.read(routeSelectionProvider.notifier).clear(RouteEndpoint.origin);
+    await tester.pump(const Duration(seconds: 1));
+    await _waitForRoute(tester, nativeMap!, visible: false);
+    expect(tester.takeException(), isNull);
   });
+}
+
+Future<void> _expectRouteInCamera(
+  MapboxMap map,
+  List<GeoCoordinate> path,
+) async {
+  final camera = await map.getCameraState();
+  final bounds = await map.coordinateBoundsForCamera(
+    CameraOptions(
+      center: camera.center,
+      zoom: camera.zoom,
+      bearing: camera.bearing,
+      pitch: camera.pitch,
+      padding: camera.padding,
+    ),
+  );
+  for (final point in path) {
+    expect(
+      point.latitude,
+      inInclusiveRange(
+        bounds.southwest.coordinates.lat,
+        bounds.northeast.coordinates.lat,
+      ),
+    );
+    expect(
+      point.longitude,
+      inInclusiveRange(
+        bounds.southwest.coordinates.lng,
+        bounds.northeast.coordinates.lng,
+      ),
+    );
+  }
+}
+
+Future<void> _waitForRoute(
+  WidgetTester tester,
+  MapboxMap map, {
+  required bool visible,
+}) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 45));
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 250));
+    final size = tester.getSize(find.byType(MapWidget));
+    final features = await map.queryRenderedFeatures(
+      RenderedQueryGeometry.fromScreenBox(
+        ScreenBox(
+          min: ScreenCoordinate(x: 0, y: 0),
+          max: ScreenCoordinate(x: size.width, y: size.height),
+        ),
+      ),
+      RenderedQueryOptions(layerIds: [MapboxController.routeLayerId]),
+    );
+    if (features.isNotEmpty == visible) return;
+  }
+  fail('Native route visibility did not become $visible.');
 }
 
 Future<void> _waitUntil(WidgetTester tester, bool Function() complete) async {

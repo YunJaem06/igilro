@@ -7,6 +7,7 @@ import '../../features/map/presentation/state/map_marker.dart';
 import '../../features/map/presentation/state/map_state.dart';
 import '../../features/map/presentation/widgets/map_canvas.dart';
 import '../../features/route_search/presentation/providers/route_selection_notifier.dart';
+import '../../features/route_search/presentation/providers/route_search_notifier.dart';
 import '../../features/route_search/presentation/state/route_selection_state.dart';
 import '../../features/route_search/presentation/widgets/route_selection_panel.dart';
 import '../../features/route_search/presentation/widgets/route_search_control.dart';
@@ -20,6 +21,8 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selection = ref.watch(routeSelectionProvider);
+    final result = ref.watch(routeSearchProvider).asData?.value;
+    final routePath = result?.routes.first.path ?? const [];
     final mapReady =
         ref.watch(mapConfiguredProvider) &&
         ref.watch(mapProvider.select((state) => state.status)) ==
@@ -33,7 +36,15 @@ class HomePage extends ConsumerWidget {
         if (endpoints.destination != null) endpoints.destination!.coordinate,
       ]);
     });
-
+    ref.listen(routeSearchProvider, (_, next) {
+      final result = next.asData?.value;
+      if (result == null) return;
+      ref.read(mapProvider.notifier).framePoints([
+        ...result.routes.first.path,
+        result.query.origin,
+        result.query.destination,
+      ]);
+    });
     return Scaffold(
       appBar: AppBar(title: const Text('이길로')),
       body: SafeArea(
@@ -43,6 +54,7 @@ class HomePage extends ConsumerWidget {
               Expanded(
                 child: MapCanvas(
                   surfaceBuilder: mapSurfaceBuilder,
+                  routePath: routePath,
                   markers: [
                     if (selection.endpoints.origin != null &&
                         selection.selecting != RouteEndpoint.origin)
@@ -86,8 +98,10 @@ class HomePage extends ConsumerWidget {
                         const SizedBox(height: 8),
                         RouteSelectionPanel(
                           mapReady: mapReady,
+                          hasRoute: routePath.isNotEmpty,
                           onShowPoints: () =>
                               ref.read(mapProvider.notifier).framePoints([
+                                ...routePath,
                                 selection.endpoints.origin!.coordinate,
                                 selection.endpoints.destination!.coordinate,
                               ]),

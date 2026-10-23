@@ -10,6 +10,7 @@ import 'mapbox_surface.dart';
 typedef MapSurfaceBuilder = Widget Function(
   MapState state,
   List<MapMarker> markers,
+  List<GeoCoordinate> routePath,
   ValueChanged<GeoCoordinate>? onCoordinateTapped,
   VoidCallback onReady,
   VoidCallback onFailure,
@@ -20,12 +21,14 @@ class MapCanvas extends ConsumerWidget {
     super.key,
     this.surfaceBuilder,
     this.markers = const [],
+    this.routePath = const [],
     this.onCoordinateTapped,
   });
 
   /// Replaces the native map surface in widget tests, preserving app behavior.
   final MapSurfaceBuilder? surfaceBuilder;
   final List<MapMarker> markers;
+  final List<GeoCoordinate> routePath;
   final ValueChanged<GeoCoordinate>? onCoordinateTapped;
 
   @override
@@ -39,6 +42,7 @@ class MapCanvas extends ConsumerWidget {
         surfaceBuilder?.call(
           state,
           markers,
+          routePath,
           state.status == MapLoadStatus.ready ? onCoordinateTapped : null,
           notifier.markReady,
           notifier.markFailed,
@@ -47,6 +51,7 @@ class MapCanvas extends ConsumerWidget {
           key: ValueKey(state.session),
           state: state,
           markers: markers,
+          routePath: routePath,
           onCoordinateTapped: state.status == MapLoadStatus.ready
               ? onCoordinateTapped
               : null,

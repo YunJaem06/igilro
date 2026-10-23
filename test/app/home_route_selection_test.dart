@@ -5,11 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:igilro/app/pages/home_page.dart';
 import 'package:igilro/core/error/result.dart';
+import 'package:igilro/core/error/failure.dart';
 import 'package:igilro/core/geo/geo_coordinate.dart';
 import 'package:igilro/features/location/domain/entities/location_fix.dart';
 import 'package:igilro/features/location/presentation/providers/location_providers.dart';
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_marker.dart';
+import 'package:igilro/features/route_search/domain/entities/route_query.dart';
+import 'package:igilro/features/route_search/domain/entities/route_search_result.dart';
+import 'package:igilro/features/route_search/presentation/providers/route_search_notifier.dart';
+import 'package:igilro/features/route_search/presentation/state/route_selection_state.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_selection_notifier.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
 
@@ -21,6 +26,7 @@ const destination = GeoCoordinate(latitude: 37.5700, longitude: 126.9810);
 void main() {
   late ProviderContainer container;
   late List<MapMarker> visibleMarkers;
+  late List<GeoCoordinate> visibleRoutePath;
   late GeoCoordinate tappedCoordinate;
   late FakeRouteRepository routeRepository;
   setUp(() {
@@ -35,6 +41,7 @@ void main() {
     container.listen(mapProvider, (_, _) {});
     container.read(mapProvider.notifier).markReady();
     visibleMarkers = [];
+    visibleRoutePath = [];
     tappedCoordinate = destination;
   });
   tearDown(() => container.dispose());
@@ -44,14 +51,16 @@ void main() {
       container: container,
       child: MaterialApp(
         home: HomePage(
-          mapSurfaceBuilder: (state, markers, onTap, ready, failure) {
-            visibleMarkers = markers;
-            return GestureDetector(
-              key: const Key('fake-map'),
-              onTap: () => onTap?.call(tappedCoordinate),
-              child: const ColoredBox(color: Colors.green),
-            );
-          },
+          mapSurfaceBuilder:
+              (state, markers, routePath, onTap, ready, failure) {
+                visibleMarkers = markers;
+                visibleRoutePath = routePath;
+                return GestureDetector(
+                  key: const Key('fake-map'),
+                  onTap: () => onTap?.call(tappedCoordinate),
+                  child: const ColoredBox(color: Colors.green),
+                );
+              },
         ),
       ),
     ),
@@ -62,6 +71,146 @@ void main() {
     await tester.tap(finder);
     await tester.pumpAndSettle();
   }
+
+  Future<List<GeoCoordinate>> searchDetour(WidgetTester tester) async {
+    final selection = container.read(routeSelectionProvider.notifier);
+    selection.useCurrentLocation(sampleLocation.coordinate);
+    selection.beginSelection(RouteEndpoint.destination);
+    selection.preview(destination);
+    selection.confirmSelection();
+    final query = RouteQuery(
+      origin: sampleLocation.coordinate,
+      destination: destination,
+      departureAt: routeDeparture,
+    );
+    // The middle vertex falls outside the endpoints' bounding box. Snapped
+    // endpoints also differ from the input pins, as in the server contract.
+    const path = [
+      GeoCoordinate(latitude: 37.56652, longitude: 126.978),
+      GeoCoordinate(latitude: 37.58, longitude: 126.99),
+      GeoCoordinate(latitude: 37.57002, longitude: 126.981),
+    ];
+    final result = sampleRouteResult(query);
+    routeRepository.response = Result.success(
+      result.copyWith(
+        routes: [result.routes.single.copyWith(path: path)],
+        snapping: result.snapping.copyWith(
+          origin: result.snapping.origin.copyWith(
+            coordinate: path.first,
+            distanceMeters: 2.2,
+          ),
+          destination: result.snapping.destination.copyWith(
+            coordinate: path.last,
+            distanceMeters: 2.2,
+          ),
+        ),
+      ),
+    );
+    await mount(tester);
+    await tap(tester, find.text('경로 검색'));
+    return path;
+  }
+
+  testWidgets(
+    'renders the snapped route and frames its detour and input pins',
+    (tester) async {
+      final path = await searchDetour(tester);
+      expect(visibleRoutePath, path);
+      expect(visibleMarkers.map((marker) => marker.coordinate), [
+        sampleLocation.coordinate,
+        destination,
+      ]);
+      expect(container.read(mapProvider).framedCoordinates, [
+        ...path,
+        sampleLocation.coordinate,
+        destination,
+      ]);
+      final revision = container.read(mapProvider).cameraRevision;
+      await tap(tester, find.text('전체 경로 보기'));
+      expect(container.read(mapProvider).cameraRevision, revision + 1);
+      expect(container.read(mapProvider).framedCoordinates, contains(path[1]));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'preview cancellation preserves the line; confirmation removes it',
+    (tester) async {
+      final path = await searchDetour(tester);
+      final selection = container.read(routeSelectionProvider.notifier);
+      selection.beginSelection(RouteEndpoint.destination);
+      selection.preview(path[1]);
+      await tester.pumpAndSettle();
+      expect(visibleRoutePath, path);
+      selection.cancelSelection();
+      await tester.pumpAndSettle();
+      expect(visibleRoutePath, path);
+      selection.beginSelection(RouteEndpoint.destination);
+      selection.preview(path[1]);
+      selection.confirmSelection();
+      await tester.pumpAndSettle();
+      expect(visibleRoutePath, isEmpty);
+      expect(container.read(mapProvider).framedCoordinates, [
+        sampleLocation.coordinate,
+        path[1],
+      ]);
+    },
+  );
+
+  for (final action in ['swap', 'clear origin', 'clear destination']) {
+    testWidgets('$action removes the previous route', (tester) async {
+      await searchDetour(tester);
+      final selection = container.read(routeSelectionProvider.notifier);
+      switch (action) {
+        case 'swap':
+          selection.swap();
+        case 'clear origin':
+          selection.clear(RouteEndpoint.origin);
+        case 'clear destination':
+          selection.clear(RouteEndpoint.destination);
+      }
+      await tester.pumpAndSettle();
+      expect(visibleRoutePath, isEmpty);
+    });
+  }
+
+  testWidgets('loading and failure clear the line and retry restores it', (
+    tester,
+  ) async {
+    final path = await searchDetour(tester);
+    final completion = Completer<Result<RouteSearchResult>>();
+    routeRepository.pending = completion.future;
+    await tester.ensureVisible(find.text('경로 검색'));
+    await tester.tap(find.text('경로 검색'));
+    await tester.pump();
+    expect(visibleRoutePath, isEmpty);
+    completion.complete(
+      const Result.failure(Failure(type: FailureType.network)),
+    );
+    await tester.pumpAndSettle();
+    expect(visibleRoutePath, isEmpty);
+    expect(container.read(routeSearchProvider).hasError, true);
+    routeRepository.pending = null;
+    await tap(tester, find.text('다시 검색'));
+    expect(visibleRoutePath, path);
+  });
+
+  testWidgets('map retry preserves the route and all framing coordinates', (
+    tester,
+  ) async {
+    final path = await searchDetour(tester);
+    final framing = container.read(mapProvider).framedCoordinates;
+    container.read(mapProvider.notifier).markFailed();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('지도 다시 불러오기'));
+    await tester.pump();
+    expect(container.read(mapProvider).session, 1);
+    expect(visibleRoutePath, path);
+    expect(container.read(mapProvider).framedCoordinates, framing);
+    container.read(mapProvider.notifier).markReady();
+    await tester.pumpAndSettle();
+    expect(visibleRoutePath, path);
+  });
 
   testWidgets(
     'search submits committed coordinates without replacing input pins',

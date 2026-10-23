@@ -11,11 +11,13 @@ class RouteSelectionPanel extends ConsumerWidget {
     required this.mapReady,
     required this.currentLocationControl,
     required this.onShowPoints,
+    this.hasRoute = false,
   });
 
   final bool mapReady;
   final Widget currentLocationControl;
   final VoidCallback onShowPoints;
+  final bool hasRoute;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -114,7 +116,7 @@ class RouteSelectionPanel extends ConsumerWidget {
         FilledButton.tonalIcon(
           onPressed: mapReady && endpoints.canSearch ? onShowPoints : null,
           icon: const Icon(Icons.fit_screen_rounded),
-          label: const Text('두 지점 보기'),
+          label: Text(hasRoute ? '전체 경로 보기' : '두 지점 보기'),
         ),
       ],
     );
