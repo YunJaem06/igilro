@@ -28,6 +28,13 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>현재 위치를 지도에 표시하고 출발지로 사용하기 위해 위치 접근이 필요합니다.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>같은 네트워크의 경로 서버에 연결하여 도보 경로를 검색합니다.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

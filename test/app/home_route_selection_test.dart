@@ -11,8 +11,10 @@ import 'package:igilro/features/location/presentation/providers/location_provide
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_marker.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_selection_notifier.dart';
+import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
 
 import '../helpers/fake_location_repository.dart';
+import '../helpers/fake_route_repository.dart';
 
 const destination = GeoCoordinate(latitude: 37.5700, longitude: 126.9810);
 
@@ -20,11 +22,14 @@ void main() {
   late ProviderContainer container;
   late List<MapMarker> visibleMarkers;
   late GeoCoordinate tappedCoordinate;
+  late FakeRouteRepository routeRepository;
   setUp(() {
+    routeRepository = FakeRouteRepository();
     container = ProviderContainer(
       overrides: [
         mapConfiguredProvider.overrideWithValue(true),
         locationRepositoryProvider.overrideWithValue(FakeLocationRepository()),
+        routeRepositoryProvider.overrideWithValue(routeRepository),
       ],
     );
     container.listen(mapProvider, (_, _) {});
@@ -57,6 +62,28 @@ void main() {
     await tester.tap(finder);
     await tester.pumpAndSettle();
   }
+
+  testWidgets(
+    'search submits committed coordinates without replacing input pins',
+    (tester) async {
+      await mount(tester);
+      await tap(tester, find.text('현재 위치를 출발지로'));
+      await tap(tester, find.text('도착지'));
+      await tester.tap(find.byKey(const Key('fake-map')));
+      await tester.pumpAndSettle();
+      await tap(tester, find.text('도착지로 선택'));
+      expect(routeRepository.queries, isEmpty);
+      await tap(tester, find.text('경로 검색'));
+      expect(routeRepository.queries.single.origin, sampleLocation.coordinate);
+      expect(routeRepository.queries.single.destination, destination);
+      expect(find.text('22분 · 1.7km'), findsOneWidget);
+      expect(visibleMarkers.map((marker) => marker.coordinate), [
+        sampleLocation.coordinate,
+        destination,
+      ]);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'location, map selection, swap and clear update map and readiness',

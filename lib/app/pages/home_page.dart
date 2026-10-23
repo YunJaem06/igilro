@@ -9,6 +9,7 @@ import '../../features/map/presentation/widgets/map_canvas.dart';
 import '../../features/route_search/presentation/providers/route_selection_notifier.dart';
 import '../../features/route_search/presentation/state/route_selection_state.dart';
 import '../../features/route_search/presentation/widgets/route_selection_panel.dart';
+import '../../features/route_search/presentation/widgets/route_search_control.dart';
 
 /// Composes selection, map and location without feature-to-feature dependencies.
 class HomePage extends ConsumerWidget {
@@ -32,6 +33,7 @@ class HomePage extends ConsumerWidget {
         if (endpoints.destination != null) endpoints.destination!.coordinate,
       ]);
     });
+
     return Scaffold(
       appBar: AppBar(title: const Text('이길로')),
       body: SafeArea(
@@ -103,6 +105,8 @@ class HomePage extends ConsumerWidget {
                             },
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        const RouteSearchControl(),
                       ],
                     ),
                   ),

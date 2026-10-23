@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Development API origins may use HTTP; release keeps the main policy. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

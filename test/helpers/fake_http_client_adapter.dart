@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -5,7 +6,7 @@ import 'package:dio/dio.dart';
 final class FakeHttpClientAdapter implements HttpClientAdapter {
   FakeHttpClientAdapter(this.handle);
 
-  final ResponseBody Function(RequestOptions options) handle;
+  final FutureOr<ResponseBody> Function(RequestOptions options) handle;
   final requests = <RequestOptions>[];
   bool isClosed = false;
 
