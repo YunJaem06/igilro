@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/failure.dart';
 import '../providers/route_search_notifier.dart';
 import '../providers/route_selection_notifier.dart';
+import 'route_result_card.dart';
 
 class RouteSearchControl extends ConsumerWidget {
   const RouteSearchControl({super.key});
@@ -25,42 +26,11 @@ class RouteSearchControl extends ConsumerWidget {
           skipLoadingOnRefresh: false,
           data: (result) {
             if (result == null) return const SizedBox.shrink();
-            final route = result.routes.first;
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('도보 경로', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_durationText(route.duration)} · '
-                    '${_distanceText(route.distanceMeters)}',
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '보행로 출발점: '
-                    '${result.snapping.origin.coordinate.latitude.toStringAsFixed(5)}, '
-                    '${result.snapping.origin.coordinate.longitude.toStringAsFixed(5)}'
-                    ' · 접근 ${_distanceText(result.snapping.origin.distanceMeters)}',
-                  ),
-                  Text(
-                    '보행로 도착점: '
-                    '${result.snapping.destination.coordinate.latitude.toStringAsFixed(5)}, '
-                    '${result.snapping.destination.coordinate.longitude.toStringAsFixed(5)}'
-                    ' · 접근 ${_distanceText(result.snapping.destination.distanceMeters)}',
-                  ),
-                  const SizedBox(height: 4),
-                  const Text('보행로까지의 접근 거리는 경로 거리·시간에 포함되지 않아요.'),
-                  const SizedBox(height: 4),
-                  Text(
-                    result.attribution,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (route.shadeEvaluation?.attribution
-                      case final String source)
-                    Text(source, style: Theme.of(context).textTheme.bodySmall),
-                ],
+              child: RouteResultCard(
+                result: result,
+                endpoints: selection.endpoints,
               ),
             );
           },
@@ -94,23 +64,6 @@ class RouteSearchControl extends ConsumerWidget {
       ],
     );
   }
-}
-
-String _durationText(Duration duration) {
-  final minutes = (duration.inSeconds / 60).ceil();
-  if (minutes == 0) return '1분 미만';
-  if (minutes < 60) return '$minutes분';
-  final remaining = minutes % 60;
-  return remaining == 0
-      ? '${minutes ~/ 60}시간'
-      : '${minutes ~/ 60}시간 $remaining분';
-}
-
-String _distanceText(double meters) {
-  if (meters > 0 && meters < 1) return '1m 미만';
-  return meters < 1000
-      ? '${meters.round()}m'
-      : '${(meters / 1000).toStringAsFixed(1)}km';
 }
 
 String _messageFor(Object error) => switch (error) {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,15 +16,30 @@ import '../../features/route_search/presentation/providers/route_search_notifier
 import '../../features/route_search/presentation/state/route_selection_state.dart';
 import '../../features/route_search/presentation/widgets/route_selection_panel.dart';
 import '../../features/route_search/presentation/widgets/route_search_control.dart';
+import '../widgets/map_search_sheet.dart';
 
 /// Composes selection, map and location without feature-to-feature dependencies.
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key, this.mapSurfaceBuilder});
 
   final MapSurfaceBuilder? mapSurfaceBuilder;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  final _panelScrollController = ScrollController();
+  final _resultKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _panelScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selection = ref.watch(routeSelectionProvider);
     final result = ref.watch(routeSearchProvider).asData?.value;
     final routePath = result?.routes.first.path ?? const [];
@@ -47,90 +64,82 @@ class HomePage extends ConsumerWidget {
         result.query.origin,
         result.query.destination,
       ]);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final resultContext = _resultKey.currentContext;
+        if (resultContext == null) return;
+        unawaited(
+          Scrollable.ensureVisible(
+            resultContext,
+            duration: const Duration(milliseconds: 250),
+          ),
+        );
+      });
     });
     return Scaffold(
       appBar: AppBar(title: const Text('이길로')),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => Column(
+        child: MapSearchSheet(
+          scrollController: _panelScrollController,
+          map: MapCanvas(
+            surfaceBuilder: widget.mapSurfaceBuilder,
+            routePath: routePath,
+            markers: [
+              if (selection.endpoints.origin != null &&
+                  selection.selecting != RouteEndpoint.origin)
+                MapMarker(
+                  coordinate: selection.endpoints.origin!.coordinate,
+                  role: MapMarkerRole.origin,
+                ),
+              if (selection.endpoints.destination != null &&
+                  selection.selecting != RouteEndpoint.destination)
+                MapMarker(
+                  coordinate: selection.endpoints.destination!.coordinate,
+                  role: MapMarkerRole.destination,
+                ),
+              if (selection.candidate != null)
+                MapMarker(
+                  coordinate: selection.candidate!.coordinate,
+                  role: MapMarkerRole.selection,
+                ),
+            ],
+            onCoordinateTapped: ref
+                .read(routeSelectionProvider.notifier)
+                .preview,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: MapCanvas(
-                  surfaceBuilder: mapSurfaceBuilder,
-                  routePath: routePath,
-                  markers: [
-                    if (selection.endpoints.origin != null &&
-                        selection.selecting != RouteEndpoint.origin)
-                      MapMarker(
-                        coordinate: selection.endpoints.origin!.coordinate,
-                        role: MapMarkerRole.origin,
-                      ),
-                    if (selection.endpoints.destination != null &&
-                        selection.selecting != RouteEndpoint.destination)
-                      MapMarker(
-                        coordinate: selection.endpoints.destination!.coordinate,
-                        role: MapMarkerRole.destination,
-                      ),
-                    if (selection.candidate != null)
-                      MapMarker(
-                        coordinate: selection.candidate!.coordinate,
-                        role: MapMarkerRole.selection,
-                      ),
-                  ],
-                  onCoordinateTapped: ref
-                      .read(routeSelectionProvider.notifier)
-                      .preview,
+              Text(
+                '나에게 맞는 길, 이길로',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              RouteSelectionPanel(
+                mapReady: mapReady,
+                hasRoute: routePath.isNotEmpty,
+                onSearchPlace: (endpoint) =>
+                    _searchPlace(context, ref, endpoint, mapReady),
+                onShowPoints: () => ref.read(mapProvider.notifier).framePoints([
+                  ...routePath,
+                  selection.endpoints.origin!.coordinate,
+                  selection.endpoints.destination!.coordinate,
+                ]),
+                currentLocationControl: CurrentLocationControl(
+                  label: '현재 위치를 출발지로',
+                  compact: true,
+                  initialMessage: '현재 위치에서 출발할 수 있어요.',
+                  onLocated: (fix) {
+                    ref.read(mapProvider.notifier).focusOn(fix.coordinate);
+                    ref
+                        .read(routeSelectionProvider.notifier)
+                        .useCurrentLocation(fix.coordinate);
+                  },
                 ),
               ),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: constraints.maxHeight * 0.55,
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '나에게 맞는 길, 이길로',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        RouteSelectionPanel(
-                          mapReady: mapReady,
-                          hasRoute: routePath.isNotEmpty,
-                          onSearchPlace: (endpoint) =>
-                              _searchPlace(context, ref, endpoint, mapReady),
-                          onShowPoints: () =>
-                              ref.read(mapProvider.notifier).framePoints([
-                                ...routePath,
-                                selection.endpoints.origin!.coordinate,
-                                selection.endpoints.destination!.coordinate,
-                              ]),
-                          currentLocationControl: CurrentLocationControl(
-                            label: '현재 위치를 출발지로',
-                            compact: true,
-                            initialMessage: '현재 위치에서 출발할 수 있어요.',
-                            onLocated: (fix) {
-                              ref
-                                  .read(mapProvider.notifier)
-                                  .focusOn(fix.coordinate);
-                              ref
-                                  .read(routeSelectionProvider.notifier)
-                                  .useCurrentLocation(fix.coordinate);
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        const RouteSearchControl(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 12),
+              KeyedSubtree(key: _resultKey, child: const RouteSearchControl()),
             ],
           ),
         ),
