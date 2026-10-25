@@ -107,8 +107,8 @@ void main() {
       fix.coordinate,
     );
     await tester.pump(const Duration(seconds: 1));
-    await tester.ensureVisible(find.text('도착지'));
-    await tester.tap(find.text('도착지'));
+    await tester.ensureVisible(find.byTooltip('지도에서 도착지 선택'));
+    await tester.tap(find.byTooltip('지도에서 도착지 선택'));
     await tester.pump();
     final mapBounds = tester.getRect(map);
     // Flutter synthetic pointers are not physical UIKit gestures. Dispatch

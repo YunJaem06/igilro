@@ -42,7 +42,7 @@ final class RouteSelectionNotifierProvider
 }
 
 String _$routeSelectionNotifierHash() =>
-    r'9a34132785facb052cab95a90d7d6dd060c0714e';
+    r'505cc705d634c860770b9f0870f1d98388ebb9dc';
 
 abstract class _$RouteSelectionNotifier extends $Notifier<RouteSelectionState> {
   RouteSelectionState build();

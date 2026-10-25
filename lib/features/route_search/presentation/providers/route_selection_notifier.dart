@@ -33,11 +33,15 @@ class RouteSelectionNotifier extends _$RouteSelectionNotifier {
     final candidate = state.candidate;
     final selecting = state.selecting;
     if (candidate == null || selecting == null) return;
+    setPoint(selecting, candidate);
+  }
+
+  void setPoint(RouteEndpoint endpoint, RoutePoint point) {
     state = state.copyWith(
-      endpoints: switch (selecting) {
-        RouteEndpoint.origin => state.endpoints.copyWith(origin: candidate),
+      endpoints: switch (endpoint) {
+        RouteEndpoint.origin => state.endpoints.copyWith(origin: point),
         RouteEndpoint.destination => state.endpoints.copyWith(
-          destination: candidate,
+          destination: point,
         ),
       },
       selecting: null,

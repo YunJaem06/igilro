@@ -11,12 +11,14 @@ class RouteSelectionPanel extends ConsumerWidget {
     required this.mapReady,
     required this.currentLocationControl,
     required this.onShowPoints,
+    required this.onSearchPlace,
     this.hasRoute = false,
   });
 
   final bool mapReady;
   final Widget currentLocationControl;
   final VoidCallback onShowPoints;
+  final ValueChanged<RouteEndpoint> onSearchPlace;
   final bool hasRoute;
 
   @override
@@ -76,7 +78,8 @@ class RouteSelectionPanel extends ConsumerWidget {
                     label: '출발지',
                     point: endpoints.origin,
                     color: Theme.of(context).colorScheme.primary,
-                    onSelect: mapReady
+                    onSearch: () => onSearchPlace(RouteEndpoint.origin),
+                    onSelectOnMap: mapReady
                         ? () => notifier.beginSelection(RouteEndpoint.origin)
                         : null,
                     onClear: () => notifier.clear(RouteEndpoint.origin),
@@ -86,7 +89,8 @@ class RouteSelectionPanel extends ConsumerWidget {
                     label: '도착지',
                     point: endpoints.destination,
                     color: const Color(0xFF4268C5),
-                    onSelect: mapReady
+                    onSearch: () => onSearchPlace(RouteEndpoint.destination),
+                    onSelectOnMap: mapReady
                         ? () =>
                               notifier.beginSelection(RouteEndpoint.destination)
                         : null,
@@ -128,14 +132,16 @@ class _EndpointField extends StatelessWidget {
     required this.label,
     required this.point,
     required this.color,
-    required this.onSelect,
+    required this.onSearch,
+    required this.onSelectOnMap,
     required this.onClear,
   });
 
   final String label;
   final RoutePoint? point;
   final Color color;
-  final VoidCallback? onSelect;
+  final VoidCallback onSearch;
+  final VoidCallback? onSelectOnMap;
   final VoidCallback onClear;
 
   @override
@@ -147,11 +153,10 @@ class _EndpointField extends StatelessWidget {
       children: [
         Expanded(
           child: Semantics(
-            label: '지도에서 $label 선택',
+            label: '장소명으로 $label 검색',
             button: true,
-            enabled: onSelect != null,
             child: InkWell(
-              onTap: onSelect,
+              onTap: onSearch,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -166,7 +171,18 @@ class _EndpointField extends StatelessWidget {
                             label,
                             style: Theme.of(context).textTheme.labelLarge,
                           ),
-                          Text(point == null ? '지도에서 선택' : _pointText(point!)),
+                          Text(
+                            point == null ? '장소명으로 검색' : _pointText(point!),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (point?.address?.isNotEmpty ?? false)
+                            Text(
+                              point!.address!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                         ],
                       ),
                     ),
@@ -175,6 +191,11 @@ class _EndpointField extends StatelessWidget {
               ),
             ),
           ),
+        ),
+        IconButton(
+          onPressed: onSelectOnMap,
+          tooltip: '지도에서 $label 선택',
+          icon: const Icon(Icons.map_outlined),
         ),
         if (point != null)
           IconButton(
@@ -188,9 +209,10 @@ class _EndpointField extends StatelessWidget {
 }
 
 String _pointText(RoutePoint point) =>
-    point.source == RoutePointSource.currentLocation
-    ? '현재 위치'
-    : '${point.coordinate.latitude.toStringAsFixed(5)}, ${point.coordinate.longitude.toStringAsFixed(5)}';
+    point.name ??
+    (point.source == RoutePointSource.currentLocation
+        ? '현재 위치'
+        : '${point.coordinate.latitude.toStringAsFixed(5)}, ${point.coordinate.longitude.toStringAsFixed(5)}');
 
 String _coordinateText(RoutePoint point) =>
     '위도 ${point.coordinate.latitude.toStringAsFixed(5)} · 경도 ${point.coordinate.longitude.toStringAsFixed(5)}';

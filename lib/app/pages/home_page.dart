@@ -6,6 +6,9 @@ import '../../features/map/presentation/providers/map_notifier.dart';
 import '../../features/map/presentation/state/map_marker.dart';
 import '../../features/map/presentation/state/map_state.dart';
 import '../../features/map/presentation/widgets/map_canvas.dart';
+import '../../features/place_search/domain/entities/place.dart';
+import '../../features/place_search/presentation/pages/place_search_page.dart';
+import '../../features/route_search/domain/entities/route_point.dart';
 import '../../features/route_search/presentation/providers/route_selection_notifier.dart';
 import '../../features/route_search/presentation/providers/route_search_notifier.dart';
 import '../../features/route_search/presentation/state/route_selection_state.dart';
@@ -99,6 +102,8 @@ class HomePage extends ConsumerWidget {
                         RouteSelectionPanel(
                           mapReady: mapReady,
                           hasRoute: routePath.isNotEmpty,
+                          onSearchPlace: (endpoint) =>
+                              _searchPlace(context, ref, endpoint, mapReady),
                           onShowPoints: () =>
                               ref.read(mapProvider.notifier).framePoints([
                                 ...routePath,
@@ -131,5 +136,47 @@ class HomePage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _searchPlace(
+    BuildContext context,
+    WidgetRef ref,
+    RouteEndpoint endpoint,
+    bool mapReady,
+  ) async {
+    var selectOnMap = false;
+    final place = await showDialog<Place>(
+      context: context,
+      useSafeArea: false,
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: PlaceSearchPage(
+          endpointLabel: endpoint == RouteEndpoint.origin ? '출발지' : '도착지',
+          onSelected: (place) => Navigator.of(dialogContext).pop(place),
+          onClose: () => Navigator.of(dialogContext).pop(),
+          onSelectOnMap: mapReady
+              ? () {
+                  selectOnMap = true;
+                  Navigator.of(dialogContext).pop();
+                }
+              : null,
+        ),
+      ),
+    );
+    if (!context.mounted) return;
+    final notifier = ref.read(routeSelectionProvider.notifier);
+    if (selectOnMap) {
+      notifier.beginSelection(endpoint);
+    } else if (place != null) {
+      notifier.setPoint(
+        endpoint,
+        RoutePoint(
+          coordinate: place.coordinate,
+          source: RoutePointSource.place,
+          name: place.name,
+          address: place.address,
+          placeId: place.id,
+        ),
+      );
+    }
   }
 }

@@ -11,6 +11,8 @@ import 'package:igilro/features/location/domain/entities/location_fix.dart';
 import 'package:igilro/features/location/presentation/providers/location_providers.dart';
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_marker.dart';
+import 'package:igilro/features/place_search/presentation/providers/place_search_providers.dart';
+import 'package:igilro/features/route_search/domain/entities/route_point.dart';
 import 'package:igilro/features/route_search/domain/entities/route_query.dart';
 import 'package:igilro/features/route_search/domain/entities/route_search_result.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_notifier.dart';
@@ -19,6 +21,7 @@ import 'package:igilro/features/route_search/presentation/providers/route_select
 import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
 
 import '../helpers/fake_location_repository.dart';
+import '../helpers/fake_place_repository.dart';
 import '../helpers/fake_route_repository.dart';
 
 const destination = GeoCoordinate(latitude: 37.5700, longitude: 126.9810);
@@ -29,13 +32,16 @@ void main() {
   late List<GeoCoordinate> visibleRoutePath;
   late GeoCoordinate tappedCoordinate;
   late FakeRouteRepository routeRepository;
+  late FakePlaceRepository placeRepository;
   setUp(() {
     routeRepository = FakeRouteRepository();
+    placeRepository = FakePlaceRepository();
     container = ProviderContainer(
       overrides: [
         mapConfiguredProvider.overrideWithValue(true),
         locationRepositoryProvider.overrideWithValue(FakeLocationRepository()),
         routeRepositoryProvider.overrideWithValue(routeRepository),
+        placeRepositoryProvider.overrideWithValue(placeRepository),
       ],
     );
     container.listen(mapProvider, (_, _) {});
@@ -217,7 +223,7 @@ void main() {
     (tester) async {
       await mount(tester);
       await tap(tester, find.text('현재 위치를 출발지로'));
-      await tap(tester, find.text('도착지'));
+      await tap(tester, find.byTooltip('지도에서 도착지 선택'));
       await tester.tap(find.byKey(const Key('fake-map')));
       await tester.pumpAndSettle();
       await tap(tester, find.text('도착지로 선택'));
@@ -244,7 +250,7 @@ void main() {
         sampleLocation.coordinate,
       );
       expect(visibleMarkers.single.role, MapMarkerRole.origin);
-      await tap(tester, find.text('도착지'));
+      await tap(tester, find.byTooltip('지도에서 도착지 선택'));
       expect(find.text('지도에서 원하는 위치를 눌러 주세요.'), findsOneWidget);
       await tester.tap(find.byKey(const Key('fake-map')));
       await tester.pumpAndSettle();
@@ -286,7 +292,7 @@ void main() {
       repository.pendingLocation = completion.future;
       await mount(tester);
       await tap(tester, find.text('현재 위치를 출발지로'));
-      await tap(tester, find.text('도착지'));
+      await tap(tester, find.byTooltip('지도에서 도착지 선택'));
       await tester.tap(find.byKey(const Key('fake-map')));
       await tester.pumpAndSettle();
       completion.complete(Result.success(sampleLocation));
@@ -309,7 +315,7 @@ void main() {
   ) async {
     await mount(tester);
     await tap(tester, find.text('현재 위치를 출발지로'));
-    await tap(tester, find.text('출발지'));
+    await tap(tester, find.byTooltip('지도에서 출발지 선택'));
     await tester.tap(find.byKey(const Key('fake-map')));
     await tester.pumpAndSettle();
     expect(visibleMarkers.single.role, MapMarkerRole.selection);
@@ -325,7 +331,7 @@ void main() {
       await mount(tester);
       await tap(tester, find.text('현재 위치를 출발지로'));
       tappedCoordinate = sampleLocation.coordinate;
-      await tap(tester, find.text('도착지'));
+      await tap(tester, find.byTooltip('지도에서 도착지 선택'));
       await tester.tap(find.byKey(const Key('fake-map')));
       await tester.pumpAndSettle();
       await tap(tester, find.text('도착지로 선택'));
@@ -344,7 +350,7 @@ void main() {
     (tester) async {
       await mount(tester);
       await tap(tester, find.text('현재 위치를 출발지로'));
-      await tap(tester, find.text('도착지'));
+      await tap(tester, find.byTooltip('지도에서 도착지 선택'));
       await tester.tap(find.byKey(const Key('fake-map')));
       await tester.pumpAndSettle();
       container.read(mapProvider.notifier).markFailed();
@@ -378,7 +384,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await mount(tester);
-      await tap(tester, find.text('출발지'));
+      await tap(tester, find.byTooltip('지도에서 출발지 선택'));
       await tester.tap(find.byKey(const Key('fake-map')));
       await tester.pumpAndSettle();
       await tap(tester, find.text('출발지로 선택'));
@@ -389,4 +395,123 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  Future<void> choosePlace(
+    WidgetTester tester,
+    String endpoint,
+    String name,
+  ) async {
+    await tap(tester, find.text(endpoint));
+    await tester.enterText(find.byKey(const Key('place-search-input')), name);
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    await tap(tester, find.widgetWithText(ListTile, name));
+  }
+
+  testWidgets(
+    'place search sets both pins and labels; swap, route and clear preserve identity',
+    (tester) async {
+      await mount(tester);
+      await choosePlace(tester, '출발지', forestPlace.name);
+      await choosePlace(tester, '도착지', stationPlace.name);
+      final endpoints = container.read(routeSelectionProvider).endpoints;
+      expect(endpoints.origin!.placeId, forestPlace.id);
+      expect(endpoints.destination!.source, RoutePointSource.place);
+      expect(find.text(forestPlace.address), findsOneWidget);
+      expect(visibleMarkers.map((marker) => marker.coordinate), [
+        forestPlace.coordinate,
+        stationPlace.coordinate,
+      ]);
+      expect(container.read(mapProvider).framedCoordinates, [
+        forestPlace.coordinate,
+        stationPlace.coordinate,
+      ]);
+      await tap(tester, find.byTooltip('출발·도착 교환'));
+      expect(
+        container.read(routeSelectionProvider).endpoints.origin!.name,
+        stationPlace.name,
+      );
+      await tap(tester, find.text('경로 검색'));
+      expect(routeRepository.queries.single.origin, stationPlace.coordinate);
+      expect(
+        routeRepository.queries.single.destination,
+        forestPlace.coordinate,
+      );
+      await tap(tester, find.byTooltip('도착지 선택 지우기'));
+      expect(
+        container.read(routeSelectionProvider).endpoints.destination,
+        isNull,
+      );
+      expect(
+        container.read(routeSelectionProvider).endpoints.origin!.placeId,
+        stationPlace.id,
+      );
+      expect(visibleRoutePath, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'closing search preserves the route; selecting a place replaces only its endpoint',
+    (tester) async {
+      final path = await searchDetour(tester);
+      final before = container.read(routeSelectionProvider).endpoints;
+      await tap(tester, find.text('도착지'));
+      await tester.enterText(find.byType(TextField), '서울숲');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      await tap(tester, find.byTooltip('장소 검색 닫기'));
+      expect(container.read(routeSelectionProvider).endpoints, before);
+      expect(visibleRoutePath, path);
+      await choosePlace(tester, '도착지', forestPlace.name);
+      expect(
+        container.read(routeSelectionProvider).endpoints.origin,
+        before.origin,
+      );
+      expect(
+        container
+            .read(routeSelectionProvider)
+            .endpoints
+            .destination!
+            .coordinate,
+        forestPlace.coordinate,
+      );
+      expect(visibleRoutePath, isEmpty);
+      expect(placeRepository.queries, ['서울숲', '서울숲']);
+    },
+  );
+
+  testWidgets(
+    'search offers the existing map picker and map confirmation clears place metadata',
+    (tester) async {
+      await mount(tester);
+      await choosePlace(tester, '출발지', forestPlace.name);
+      await tap(tester, find.text('출발지'));
+      await tap(tester, find.text('지도에서 선택'));
+      expect(
+        container.read(routeSelectionProvider).selecting,
+        RouteEndpoint.origin,
+      );
+      await tester.tap(find.byKey(const Key('fake-map')));
+      await tester.pumpAndSettle();
+      await tap(tester, find.text('출발지로 선택'));
+      final origin = container.read(routeSelectionProvider).endpoints.origin!;
+      expect(origin.source, RoutePointSource.map);
+      expect(origin.name, isNull);
+      expect(origin.placeId, isNull);
+      expect(origin.coordinate, destination);
+    },
+  );
+
+  testWidgets('place selection stays available when the map fails to load', (
+    tester,
+  ) async {
+    container.read(mapProvider.notifier).markFailed();
+    await mount(tester);
+    await choosePlace(tester, '출발지', forestPlace.name);
+    expect(
+      container.read(routeSelectionProvider).endpoints.origin!.placeId,
+      forestPlace.id,
+    );
+    expect(tester.takeException(), isNull);
+  });
 }

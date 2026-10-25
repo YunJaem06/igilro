@@ -16,6 +16,9 @@ T _$identity<T>(T value) => value;
 mixin _$RoutePoint {
   GeoCoordinate get coordinate;
   RoutePointSource get source;
+  String? get name;
+  String? get address;
+  String? get placeId;
 
   /// Create a copy of RoutePoint
   /// with the given fields replaced by the non-null parameter values.
@@ -33,19 +36,31 @@ mixin _$RoutePoint {
             (identical(other.coordinate, _this.coordinate) ||
                 other.coordinate == _this.coordinate) &&
             (identical(other.source, _this.source) ||
-                other.source == _this.source));
+                other.source == _this.source) &&
+            (identical(other.name, _this.name) || other.name == _this.name) &&
+            (identical(other.address, _this.address) ||
+                other.address == _this.address) &&
+            (identical(other.placeId, _this.placeId) ||
+                other.placeId == _this.placeId));
   }
 
   @override
   int get hashCode {
     final _this = this as RoutePoint;
-    return Object.hash(runtimeType, _this.coordinate, _this.source);
+    return Object.hash(
+      runtimeType,
+      _this.coordinate,
+      _this.source,
+      _this.name,
+      _this.address,
+      _this.placeId,
+    );
   }
 
   @override
   String toString() {
     final _this = this as RoutePoint;
-    return 'RoutePoint(coordinate: ${_this.coordinate}, source: ${_this.source})';
+    return 'RoutePoint(coordinate: ${_this.coordinate}, source: ${_this.source}, name: ${_this.name}, address: ${_this.address}, placeId: ${_this.placeId})';
   }
 }
 
@@ -56,7 +71,13 @@ abstract mixin class $RoutePointCopyWith<$Res> {
     $Res Function(RoutePoint) _then,
   ) = _$RoutePointCopyWithImpl;
   @useResult
-  $Res call({GeoCoordinate coordinate, RoutePointSource source});
+  $Res call({
+    GeoCoordinate coordinate,
+    RoutePointSource source,
+    String? name,
+    String? address,
+    String? placeId,
+  });
 
   $GeoCoordinateCopyWith<$Res> get coordinate;
 }
@@ -72,7 +93,13 @@ class _$RoutePointCopyWithImpl<$Res> implements $RoutePointCopyWith<$Res> {
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? coordinate = null, Object? source = null}) {
+  $Res call({
+    Object? coordinate = null,
+    Object? source = null,
+    Object? name = freezed,
+    Object? address = freezed,
+    Object? placeId = freezed,
+  }) {
     return _then(
       RoutePoint(
         coordinate: null == coordinate
@@ -83,6 +110,18 @@ class _$RoutePointCopyWithImpl<$Res> implements $RoutePointCopyWith<$Res> {
             ? _self.source
             : source // ignore: cast_nullable_to_non_nullable
                   as RoutePointSource,
+        name: freezed == name
+            ? _self.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        address: freezed == address
+            ? _self.address
+            : address // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        placeId: freezed == placeId
+            ? _self.placeId
+            : placeId // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -191,14 +230,26 @@ extension RoutePointPatterns on RoutePoint {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(GeoCoordinate coordinate, RoutePointSource source)?
+    TResult Function(
+      GeoCoordinate coordinate,
+      RoutePointSource source,
+      String? name,
+      String? address,
+      String? placeId,
+    )?
     $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _RoutePoint() when $default != null:
-        return $default(_that.coordinate, _that.source);
+        return $default(
+          _that.coordinate,
+          _that.source,
+          _that.name,
+          _that.address,
+          _that.placeId,
+        );
       case _:
         return orElse();
     }
@@ -219,13 +270,25 @@ extension RoutePointPatterns on RoutePoint {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(GeoCoordinate coordinate, RoutePointSource source)
+    TResult Function(
+      GeoCoordinate coordinate,
+      RoutePointSource source,
+      String? name,
+      String? address,
+      String? placeId,
+    )
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _RoutePoint():
-        return $default(_that.coordinate, _that.source);
+        return $default(
+          _that.coordinate,
+          _that.source,
+          _that.name,
+          _that.address,
+          _that.placeId,
+        );
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -245,13 +308,25 @@ extension RoutePointPatterns on RoutePoint {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(GeoCoordinate coordinate, RoutePointSource source)?
+    TResult? Function(
+      GeoCoordinate coordinate,
+      RoutePointSource source,
+      String? name,
+      String? address,
+      String? placeId,
+    )?
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _RoutePoint() when $default != null:
-        return $default(_that.coordinate, _that.source);
+        return $default(
+          _that.coordinate,
+          _that.source,
+          _that.name,
+          _that.address,
+          _that.placeId,
+        );
       case _:
         return null;
     }
@@ -261,12 +336,24 @@ extension RoutePointPatterns on RoutePoint {
 /// @nodoc
 
 class _RoutePoint implements RoutePoint {
-  const _RoutePoint({required this.coordinate, required this.source});
+  const _RoutePoint({
+    required this.coordinate,
+    required this.source,
+    this.name,
+    this.address,
+    this.placeId,
+  });
 
   @override
   final GeoCoordinate coordinate;
   @override
   final RoutePointSource source;
+  @override
+  final String? name;
+  @override
+  final String? address;
+  @override
+  final String? placeId;
 
   /// Create a copy of RoutePoint
   /// with the given fields replaced by the non-null parameter values.
@@ -283,17 +370,20 @@ class _RoutePoint implements RoutePoint {
             other is _RoutePoint &&
             (identical(other.coordinate, coordinate) ||
                 other.coordinate == coordinate) &&
-            (identical(other.source, source) || other.source == source));
+            (identical(other.source, source) || other.source == source) &&
+            (identical(other.name, name) || other.name == name) &&
+            (identical(other.address, address) || other.address == address) &&
+            (identical(other.placeId, placeId) || other.placeId == placeId));
   }
 
   @override
   int get hashCode {
-    return Object.hash(runtimeType, coordinate, source);
+    return Object.hash(runtimeType, coordinate, source, name, address, placeId);
   }
 
   @override
   String toString() {
-    return 'RoutePoint(coordinate: $coordinate, source: $source)';
+    return 'RoutePoint(coordinate: $coordinate, source: $source, name: $name, address: $address, placeId: $placeId)';
   }
 }
 
@@ -306,7 +396,13 @@ abstract mixin class _$RoutePointCopyWith<$Res>
   ) = __$RoutePointCopyWithImpl;
   @override
   @useResult
-  $Res call({GeoCoordinate coordinate, RoutePointSource source});
+  $Res call({
+    GeoCoordinate coordinate,
+    RoutePointSource source,
+    String? name,
+    String? address,
+    String? placeId,
+  });
 
   @override
   $GeoCoordinateCopyWith<$Res> get coordinate;
@@ -323,7 +419,13 @@ class __$RoutePointCopyWithImpl<$Res> implements _$RoutePointCopyWith<$Res> {
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $Res call({Object? coordinate = null, Object? source = null}) {
+  $Res call({
+    Object? coordinate = null,
+    Object? source = null,
+    Object? name = freezed,
+    Object? address = freezed,
+    Object? placeId = freezed,
+  }) {
     return _then(
       _RoutePoint(
         coordinate: null == coordinate
@@ -334,6 +436,18 @@ class __$RoutePointCopyWithImpl<$Res> implements _$RoutePointCopyWith<$Res> {
             ? _self.source
             : source // ignore: cast_nullable_to_non_nullable
                   as RoutePointSource,
+        name: freezed == name
+            ? _self.name
+            : name // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        address: freezed == address
+            ? _self.address
+            : address // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        placeId: freezed == placeId
+            ? _self.placeId
+            : placeId // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
