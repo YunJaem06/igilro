@@ -197,13 +197,16 @@ void main() {
     await _waitForRoute(tester, nativeMap!, visible: true);
     await _expectRouteInCamera(nativeMap!, path);
 
-    // Recreating style managers must restore an unchanged route and its pins.
-    final readyBeforeReload = styleReadyCount;
-    await nativeMap!.loadStyleURI(MapboxStyles.STANDARD);
-    await _waitUntil(tester, () => styleReadyCount > readyBeforeReload);
-    await tester.pump(const Duration(seconds: 1));
-    await _waitForRoute(tester, nativeMap!, visible: true);
-    await _expectRouteInCamera(nativeMap!, path);
+    // Native SDKs may skip loading an unchanged URI. Changing the style forces
+    // real reload events and exercises manager recreation in both directions.
+    for (final style in [MapboxStyles.DARK, MapboxStyles.STANDARD]) {
+      final readyBeforeReload = styleReadyCount;
+      await nativeMap!.loadStyleURI(style);
+      await _waitUntil(tester, () => styleReadyCount > readyBeforeReload);
+      await tester.pump(const Duration(seconds: 1));
+      await _waitForRoute(tester, nativeMap!, visible: true);
+      await _expectRouteInCamera(nativeMap!, path);
+    }
 
     container.read(routeSelectionProvider.notifier).clear(RouteEndpoint.origin);
     await tester.pump(const Duration(seconds: 1));
