@@ -10,7 +10,7 @@
 - JSON 요청/응답, Accept/Content-Type application/json.
 - 연결·송신 timeout 10초, 수신 timeout 30초. 서버는 동기 경로 검색이 이 범위에 들어오는지 측정해 주세요. 장시간 작업이 필요하면 비동기 작업 API를 별도로 합의한다.
 - Flutter Phase 2에서 Mapbox 지도와 현재 위치 기능을 연결했다. Phase 3에서 선택 좌표로 walking/fastest 경로 API를 호출하고 시간·거리·스냅 위치·접근 거리·출처를 표시한다. 응답 geometry의 전체 좌표를 지도 경로선으로 표시하고 전체 경로·입력 핀이 보이도록 카메라를 조정한다. 입력 핀과 경로 끝점 사이에 접근선을 만들어 추가하지 않는다.
-- Phase 3의 출발지/도착지 지도 선택, 현재 위치를 출발지로 사용, 핀 표시·교환·삭제를 구현했다. 앱이 준비한 WGS84 좌표를 경로 검색 요청으로 전달한다. 현재 선택값에는 장소 이름/주소/공급자 ID가 없으며 장소 검색 API 연결 시 추가한다.
+- Phase 3의 출발지/도착지 지도 선택, 현재 위치를 출발지로 사용, 핀 표시·교환·삭제를 구현했다. 장소 검색 UI와 API 클라이언트도 추가했다. 장소 선택값은 이름/주소/공급자 ID와 WGS84 좌표를 보존하고 경로 요청에는 기존 계약의 좌표만 전달한다. 실제 장소 검색 서버 구현은 아래 계약에 따라 필요하다.
 
 ## 초기 서버 Phase 1 구성 요구사항 기록
 
@@ -48,7 +48,9 @@ code는 안정적인 문자열 식별자, requestId는 서버 로그와 X-Reques
 
 401/403 등도 앱에서 구분한다. 인증 도입 시 계약을 추가한다. 경로 업무 코드는 서버의 최종 계약으로 확인했으며, 모르는 URL의 404 `NOT_FOUND`와 검색 실패인 404 `ROUTE_NOT_FOUND`를 구분한다. 일반 요청 형식 오류는 400 `INVALID_REQUEST`, 앱용 상태 API의 공간 DB 장애는 503 `SERVICE_UNAVAILABLE`이다. 상태 확인 endpoint는 `GET /api/v1/health`이며 Actuator의 표준 응답과 구분한다.
 
-## 다음 단계: 장소 검색 계약 제안
+## 장소 검색: 앱 구현 완료·서버 구현 필요
+
+2026-10-24 앱에서 아래 계약에 대한 DTO/Mapper, Repository, UseCase, AsyncNotifier와 출발지·도착지 검색 화면을 구현했다. 로컬 서버의 실제 요청은 현재 HTTP 404 `NOT_FOUND`이며, 앱은 검색 결과 없음으로 처리하지 않고 서비스 미준비 안내와 지도 선택을 제공한다. 성공·빈 결과·취소·오류 흐름은 Fake HTTP/Repository로 검증했으며 실제 공급자 검색 성공 검증은 서버 구현 이후 진행한다.
 
 `GET /api/v1/places/search?query=서울숲`
 
@@ -66,6 +68,17 @@ code는 안정적인 문자열 식별자, requestId는 서버 로그와 X-Reques
 ```
 
 한국 장소 검색 데이터 공급자는 서버 adapter로 분리하고, 공급자의 응답을 이 앱 계약으로 변환한다. 빈 결과는 places: []로 표현한다. 페이지 처리, 공급자 약관·캐시 정책은 선정 후 문서화한다.
+
+서버 Codex 전달용 작업 범위:
+
+- 한국 장소명·주소를 검색할 수 있는 공급자를 선정하고 `GET /api/v1/places/search`에 연결한다. 공급자 비밀 키는 서버 환경 변수로 관리한다. Mapbox 지도 토큰으로 한국 장소 검색까지 지원된다고 가정하지 않는다.
+- UTF-8 `query`를 query parameter로 받는다. 앱은 앞뒤·연속 공백을 정규화하고 공백뿐인 입력을 보내지 않는다. 입력 후 350ms 대기하고 한글 조합 종료 후 요청하며 검색 키는 즉시 요청한다. 서버에서도 빈 입력을 400 `INVALID_REQUEST`로 검증한다.
+- 성공은 위 `places[]` 객체로 반환한다. `id`는 공급자 접두사를 포함한 opaque 문자열, `name`은 비어 있지 않은 장소명, `address`는 문자열(주소가 없으면 빈 문자열), `coordinate`는 WGS84 숫자 경도/위도다. 빈 결과는 반드시 200 `{"places": []}`이고 404와 구분한다. 앱은 잘못된 필수 필드·좌표를 성공 후보로 표시하지 않는다.
+- 앱은 첫 응답의 후보만 표시하며 현재 페이지네이션·사용자 위치 기반 편향·상세 조회를 요청하지 않는다. 공급자 선정 후 후보 수, 검색 길이, 페이지 정책, 응답 제한·지연 시간과 표시해야 할 출처/로고를 확정한다. 공급자가 요구하는 표시 필드가 추가되면 실제 서비스 연결 전에 앱 계약도 확장한다.
+- 공급자 장애·timeout·요청 제한은 공통 최상위 `code`/`requestId` 오류 계약으로 변환한다. 429는 요청 제한, 5xx는 공급자/서비스 장애로 구분하며 서버 진단 message를 UI에 직접 표시하지 않는다.
+- 현재 경로 검색은 서울숲 pilot만 지원한다. 장소 검색이 더 넓은 지역을 반환해도 앱은 결과를 임의로 숨기지 않으며 경로 요청의 `OUTSIDE_SUPPORTED_AREA` 안내를 유지한다. 검색 자체의 지원 지역 제한이 필요하면 별도 계약으로 합의한다.
+
+앱은 선택된 장소의 좌표로 핀과 카메라를 갱신하고 이름·주소·ID를 로컬 선택 상태에 보존한다. 장소를 선택해야만 기존 경로를 무효화하며, 검색 중 또는 닫기만 한 경우 기존 경로를 유지한다. `POST /api/v1/routes/search`에는 장소명·주소·ID를 추가하지 않는다.
 
 ## 연결한 도보 경로 계약
 
@@ -134,7 +147,7 @@ code는 안정적인 문자열 식별자, requestId는 서버 로그와 X-Reques
 
 최종 서버 계약에서는 거리·시간이 스냅된 보행로 두 지점 사이의 경로 기준이다. 입력 핀에서 보행로까지의 접근 거리는 포함하지 않는다. 앱은 선택 좌표와 실제 경로 끝점·접근 거리를 분리하고 OSM 출처를 표시한다. 경로 ID는 응답 내 식별자로만 사용하며 상세 조회를 요청하지 않는다. 현재 지원 지역은 서울숲 pilot이고 장소 검색은 경로 API 연결의 선행 조건이 아니다.
 
-`routes[].shadeEvaluation`은 nullable 확장 객체다. status, modelVersion과 nullable coverage/dataVersion/attribution/solarAltitudeDegrees를 보존한다. AVAILABLE과 전체 coverage=1일 때만 shadeRatio를 제공하고 DATA_UNAVAILABLE/INCOMPLETE_COVERAGE/NIGHT/LOW_SUN/UNSUPPORTED_TIME에서는 null이다. 건물 버전·출처는 최상위 보행 그래프 버전·OSM 출처와 구분한다. 현재 클라이언트는 이 데이터를 보존하되 그늘 모드·점수 UI는 추가하지 않는다. 상태가 미지 값이면 unknown으로 유지하고 유효한 기본 경로를 수용한다.
+`routes[].shadeEvaluation`은 nullable 확장 객체다. status, modelVersion과 nullable coverage/dataVersion/attribution/solarAltitudeDegrees를 보존한다. AVAILABLE과 전체 coverage=1일 때만 shadeRatio를 제공하고 DATA_UNAVAILABLE/INCOMPLETE_COVERAGE/NIGHT/LOW_SUN/UNSUPPORTED_TIME에서는 null이다. 건물 버전·출처는 최상위 보행 그래프 버전·OSM 출처와 구분한다. 클라이언트 결과 카드는 그늘 비율과 상태별 안내, evaluatedAt 기준 시각, 건물 출처를 표시한다. coverage는 ‘평가 가능한 구간’으로 표시하고 그늘 비율로 사용하지 않는다. 상태가 미지 값이면 unknown으로 유지해 ‘그늘 정보 확인 불가’를 표시하고 유효한 기본 경로를 수용한다. 그늘 우선 경로 추천과 모드 선택은 아직 후속 작업이다.
 
 DTO 테스트는 서버에서 공유한 [합성 fixture HTTP 성공 응답](../test/fixtures/route_search_response.json)을 사용한다. 이는 실제 서울숲 스냅샷의 경로 결과를 고정 반환하는 기능이 아니다. 미지 응답 필드를 허용하되 요청에는 정의된 필드만 보낸다.
 
@@ -146,4 +159,4 @@ DTO 테스트는 서버에서 공유한 [합성 fixture HTTP 성공 응답](../t
 4. 위 장소·경로 API 계약의 수용 여부 또는 변경 제안.
 5. 첫 지원 지역과 데이터 확보 계획, 기본 도보 경로를 실제로 계산할 수 있는 단계.
 
-Android Emulator에서는 호스트 개발 서버를 `http://10.0.2.2:8080`으로, iOS Simulator에서는 `http://localhost:8080`으로 지정한다. 실제 기기는 같은 네트워크에서 접근 가능한 개발 서버 주소를 사용한다. Android debug HTTP 허용과 iOS 로컬 네트워크 설정을 추가했다. 실제 서버·기기 통합 검증은 남아 있으며, 2026-10-23 Windows의 Unit/Widget 테스트 177개와 정적 분석·포맷 검사는 통과했다. Flutter native 앱 연결에는 웹 CORS 설정이 필수는 아니며 웹 지원은 별도로 검토한다.
+Android Emulator에서는 호스트 개발 서버를 `http://10.0.2.2:8080`으로, iOS Simulator에서는 `http://localhost:8080`으로 지정한다. 실제 기기는 같은 네트워크에서 접근 가능한 개발 서버 주소를 사용한다. Android debug HTTP 허용과 iOS 로컬 네트워크 설정을 추가했다. 2026-10-24 실제 개발 PostGIS·서울숲 OSM 그래프를 사용해 두 시뮬레이터의 HTTP 200 경로 검색·경로선·카메라, 422/404 안내와 연결 실패 후 복구를 검증했다. [상세 검증 기록](server_integration_verification.md)을 참고한다. 실물 휴대전화와 배포 서버 검증은 후속 작업이다. Flutter native 앱 연결에는 웹 CORS 설정이 필수는 아니며 웹 지원은 별도로 검토한다.
