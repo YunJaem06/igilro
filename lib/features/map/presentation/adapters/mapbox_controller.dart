@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui show Size;
 
 import 'package:flutter/foundation.dart';
@@ -77,9 +78,15 @@ final class MapboxController {
               state.framedCoordinates.map(pointFor).toList(growable: false),
               CameraOptions(bearing: 0, pitch: 0),
               MbxEdgeInsets(
-                top: viewportSize.height * 0.20,
+                top: math.min(
+                  viewportSize.height * 0.35,
+                  math.max(48, viewportSize.height * 0.20),
+                ),
                 left: viewportSize.width * 0.12,
-                bottom: viewportSize.height * 0.12,
+                bottom: math.min(
+                  viewportSize.height * 0.25,
+                  math.max(28, viewportSize.height * 0.12),
+                ),
                 right: viewportSize.width * 0.12,
               ),
               16,

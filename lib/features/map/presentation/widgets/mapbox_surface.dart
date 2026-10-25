@@ -43,6 +43,7 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
   bool _styleReady = false;
   bool _applyScheduled = false;
   bool _moveCameraPending = false;
+  bool _reframeAfterResize = false;
   ui.Size _viewportSize = ui.Size.zero;
   late final CameraViewportState _initialViewport;
 
@@ -129,10 +130,10 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      if (_styleReady &&
-          _viewportSize != constraints.biggest &&
+      if (_viewportSize != constraints.biggest &&
           widget.state.framedCoordinates.isNotEmpty) {
-        _scheduleApply(moveCamera: true);
+        _reframeAfterResize = true;
+        if (_styleReady) _scheduleApply(moveCamera: true);
       }
       _viewportSize = constraints.biggest;
       return MapWidget(
@@ -162,6 +163,14 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
           widget.onMapCreated?.call(map);
         },
         onStyleLoadedListener: (_) => unawaited(_onStyleLoaded()),
+        onMapIdleListener: (_) {
+          // Platform-view resizing can finish after Flutter's layout frame.
+          // Refit once the native viewport has rendered and settled.
+          if (mounted && _styleReady && _reframeAfterResize) {
+            _reframeAfterResize = false;
+            _scheduleApply(moveCamera: true);
+          }
+        },
         onMapLoadErrorListener: (event) {
           // A missing tile must not discard an otherwise usable map.
           if (mounted && event.type == MapLoadErrorType.STYLE) {
