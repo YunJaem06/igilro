@@ -46,6 +46,7 @@ final class MapboxController {
 
   Future<void> initialize() => _enqueue(() async {
     // A style reload needs fresh managers and rendering caches.
+    _accessTaps?.cancel();
     for (final id in [
       _routes?.id,
       _alternatives?.id,
@@ -58,26 +59,34 @@ final class MapboxController {
       if (_disposed) return;
       await _map.annotations.removeAnnotationManagerById(id);
     }
+    if (_disposed) return;
     _lastLocation = null;
-    _accessTaps?.cancel();
     _accessById.clear();
     _lastLightKey = null;
     await _map.setStyleImportConfigProperty('basemap', 'show3dObjects', true);
+    if (_disposed) return;
     _lastMarkers = const [];
     _lastRoutePaint = null;
     _lastCoverage = null;
     _lastAlternativePath = const [];
     for (final id in [networkLayerId, boundsLayerId, 'igilro.coverage-fill']) {
-      if (await _map.styleLayerExists(id)) await _map.removeStyleLayer(id);
+      final exists = await _map.styleLayerExists(id);
+      if (_disposed) return;
+      if (exists) await _map.removeStyleLayer(id);
+      if (_disposed) return;
     }
-    if (await _map.styleSourceExists(coverageSourceId)) {
+    final sourceExists = await _map.styleSourceExists(coverageSourceId);
+    if (_disposed) return;
+    if (sourceExists) {
       await _map.removeStyleSource(coverageSourceId);
     }
+    if (_disposed) return;
     _coverageSource = GeoJsonSource(
       id: coverageSourceId,
       data: coverageGeoJson(null),
     );
     await _map.addSource(_coverageSource!);
+    if (_disposed) return;
     await _map.addLayer(
       FillLayer(
         id: 'igilro.coverage-fill',
@@ -92,6 +101,7 @@ final class MapboxController {
         fillOpacity: 0.04,
       ),
     );
+    if (_disposed) return;
     await _map.addLayer(
       LineLayer(
         id: boundsLayerId,
@@ -107,6 +117,7 @@ final class MapboxController {
         lineDasharray: [3, 2],
       ),
     );
+    if (_disposed) return;
     await _map.addLayer(
       LineLayer(
         id: networkLayerId,
@@ -122,11 +133,13 @@ final class MapboxController {
         lineWidth: 2,
       ),
     );
+    if (_disposed) return;
     // Network and access points are below the alternative/selected routes;
     // location and selected endpoint pins are created last.
     _accessPoints = await _map.annotations.createPointAnnotationManager(
       id: 'igilro.access-points',
     );
+    if (_disposed) return;
     _accessTaps = _accessPoints!.tapEvents(
       onTap: (annotation) {
         final point = _accessById[annotation.id];
@@ -136,9 +149,11 @@ final class MapboxController {
     _alternatives = await _map.annotations.createPolylineAnnotationManager(
       id: 'igilro.alternative',
     );
+    if (_disposed) return;
     _routes = await _map.annotations.createPolylineAnnotationManager(
       id: routeLayerId,
     );
+    if (_disposed) return;
     _segments = await _map.annotations.createPolylineAnnotationManager(
       id: segmentsLayerId,
     );

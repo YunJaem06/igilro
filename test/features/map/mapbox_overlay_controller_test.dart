@@ -19,6 +19,26 @@ import 'package:igilro/features/route_search/domain/entities/model_route_predict
 import '../../helpers/fake_prediction_repository.dart';
 
 void main() {
+  testWidgets(
+    'disposing during source initialization stops later SDK operations',
+    (tester) async {
+      await tester.runAsync(() async {
+        final native = _Map();
+        final started = Completer<void>();
+        final release = Completer<void>();
+        native.style.sourceStarted = started;
+        native.style.pendingSource = release.future;
+        final controller = MapboxController(MapboxMap(native));
+        final future = controller.initialize();
+        await started.future;
+        controller.dispose();
+        release.complete();
+        await future;
+        expect(native.style.layers, isEmpty);
+        expect(native.annotations.order, isEmpty);
+      });
+    },
+  );
   final prediction = predictionFor(
     predictionQuery().copyWith(
       origin: forestOrigin,
@@ -203,6 +223,8 @@ class _Map extends Fake implements platform.MapboxMapPlatformInterface {
 }
 
 class _Style extends Fake implements platform.StylePlatformInterface {
+  Completer<void>? sourceStarted;
+  Future<void>? pendingSource;
   final layers = <String>{};
   final sources = <String>{};
   final data = <String, String>{};
@@ -223,6 +245,8 @@ class _Style extends Fake implements platform.StylePlatformInterface {
   @override
   Future<void> addStyleSource(String id, String properties) async {
     sources.add(id);
+    sourceStarted?.complete();
+    await pendingSource;
   }
 
   @override
