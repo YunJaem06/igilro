@@ -82,7 +82,9 @@ code는 안정적인 문자열 식별자, requestId는 서버 로그와 X-Reques
 }
 ```
 
-클라이언트가 이 endpoint를 연결했다. 현재 서버의 Geoapify adapter 계약에 따라 최상위 `attributions: [{text, url}]`도 수용하며 URL은 null을 허용한다. 앱은 공급자 출처 링크를 표시한다. 서버에 공급자 키가 없으면 PLACE_SEARCH_NOT_CONFIGURED를 안내하고 지도 선택을 유지한다. 빈 결과는 places: []로 표현한다.
+클라이언트가 이 endpoint를 연결했다. 2026-10-29 서버 공급자를 카카오 Local로 교체했으며 앱의 endpoint와 응답 필드는 유지한다. 키워드 검색이 정상 빈 결과일 때만 주소 검색을 호출한다. `id`는 `kakao:place:...` 또는 `kakao:address:...`인 opaque 값으로 다루고 앱에서 해석하지 않는다. 최상위 `attributions: [{text, url}]`를 수용하며 URL은 null을 허용한다. 장소 결과는 카카오맵 출처를 표시하고 기존 지도·경로 출처와 구분한다. 서버의 `KAKAO_REST_API_KEY`가 없으면 PLACE_SEARCH_NOT_CONFIGURED를 안내하고 지도 선택을 유지한다. 빈 결과는 places: []로 표현한다.
+
+카카오의 [타사 지도 병용 공식 답변](https://devtalk.kakao.com/t/local-api-sdk/149943/2)을 확인했다. 검색 결과는 실시간 검색·선택·현재 경로 안내의 메모리 상태로 사용하며 DB·파일·캐시나 검색 이력으로 보관하지 않는다. 같은 날 서버 키 등록·재시작 후 서울숲 장소명·주소 검색의 HTTP 200과 카카오 ID·출처, 휴대폰의 LAN HTTP 검색을 확인했다. 다양한 검색어의 품질과 장소 선택 후 지도 핀 검증은 별도다. 서버의 최신 설정·전환 계약은 `igilro-server/docs/kakao-place-search.md`에 기록했다.
 
 ## 2026-10-29 서울숲 coverage·그늘 구간 연결
 
