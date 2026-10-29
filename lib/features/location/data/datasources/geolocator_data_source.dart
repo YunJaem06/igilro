@@ -26,7 +26,8 @@ final class GeolocatorDataSource {
   Stream<Position> watchPositions() => _platform.getPositionStream(
     locationSettings: const LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 3,
+      // Stationary users still need fresh fixes for guidance's expiry check.
+      distanceFilter: 0,
     ),
   );
 }

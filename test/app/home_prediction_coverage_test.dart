@@ -218,6 +218,21 @@ void main() {
     },
   );
 
+  testWidgets('continuing paused guidance restores camera following', (
+    tester,
+  ) async {
+    await mount(tester);
+    await selectEntries(tester);
+    await tap(tester, '그늘길 비교');
+    await tap(tester, '안내 시작');
+    container.read(navigationProvider.notifier).pause();
+    container.read(mapProvider.notifier).stopFollowing();
+    await tester.pumpAndSettle();
+    await tap(tester, '안내 계속');
+    expect(container.read(mapProvider).followLocation, true);
+    await tap(tester, '안내 종료');
+  });
+
   testWidgets(
     'outside-area failure clears paint and offers the server coverage camera action',
     (tester) async {

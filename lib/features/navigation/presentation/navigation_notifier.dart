@@ -49,12 +49,14 @@ class NavigationNotifier extends _$NavigationNotifier {
   bool _joined = false;
   int _outsideFixes = 0;
   Timer? _previewTimer;
+  Timer? _fixExpiryTimer;
 
   @override
   GuidanceState build() {
     ref.onDispose(() {
       _generation++;
       _previewTimer?.cancel();
+      _fixExpiryTimer?.cancel();
       unawaited(_subscription?.cancel());
     });
     return const GuidanceState();
@@ -63,6 +65,7 @@ class NavigationNotifier extends _$NavigationNotifier {
   void start(NavigationRoute route) {
     if (route.path.length < 2) return;
     _previewTimer?.cancel();
+    _fixExpiryTimer?.cancel();
     unawaited(_subscription?.cancel());
     final generation = ++_generation;
     _joined = false;
@@ -74,6 +77,7 @@ class NavigationNotifier extends _$NavigationNotifier {
             if (!ref.mounted || generation != _generation) return;
             switch (result) {
               case Failed<LocationFix>(:final failure):
+                _fixExpiryTimer?.cancel();
                 state = GuidanceState(
                   status: GuidanceStatus.failed,
                   route: route,
@@ -81,12 +85,14 @@ class NavigationNotifier extends _$NavigationNotifier {
                 );
                 unawaited(_subscription?.cancel());
               case Success<LocationFix>(:final value):
+                _fixExpiryTimer?.cancel();
                 final age = DateTime.now().toUtc().difference(
                   value.capturedAt.toUtc(),
                 );
                 if (age > const Duration(seconds: 20) ||
                     age < const Duration(seconds: -5) ||
                     value.accuracyMeters > 50) {
+                  _outsideFixes = 0;
                   state = GuidanceState(
                     status: GuidanceStatus.weakGps,
                     route: route,
@@ -118,11 +124,26 @@ class NavigationNotifier extends _$NavigationNotifier {
                 );
                 if (status == GuidanceStatus.arrived) {
                   unawaited(_subscription?.cancel());
+                } else {
+                  _fixExpiryTimer = Timer(
+                    const Duration(seconds: 20) - age,
+                    () {
+                      if (!ref.mounted || generation != _generation) return;
+                      _outsideFixes = 0;
+                      state = GuidanceState(
+                        status: GuidanceStatus.weakGps,
+                        route: route,
+                        fix: state.fix,
+                        progress: state.progress,
+                      );
+                    },
+                  );
                 }
             }
           },
           onError: (Object error) {
             if (ref.mounted && generation == _generation) {
+              _fixExpiryTimer?.cancel();
               state = GuidanceState(
                 status: GuidanceStatus.failed,
                 route: route,
@@ -138,6 +159,7 @@ class NavigationNotifier extends _$NavigationNotifier {
     if (route.path.length < 2) return;
     _generation++;
     _previewTimer?.cancel();
+    _fixExpiryTimer?.cancel();
     unawaited(_subscription?.cancel());
     _subscription = null;
     var step = 0;
@@ -177,6 +199,7 @@ class NavigationNotifier extends _$NavigationNotifier {
     if (!state.active || state.status == GuidanceStatus.arrived) return;
     _generation++;
     _previewTimer?.cancel();
+    _fixExpiryTimer?.cancel();
     unawaited(_subscription?.cancel());
     state = GuidanceState(
       status: GuidanceStatus.paused,
@@ -201,6 +224,7 @@ class NavigationNotifier extends _$NavigationNotifier {
   void stop() {
     _generation++;
     _previewTimer?.cancel();
+    _fixExpiryTimer?.cancel();
     unawaited(_subscription?.cancel());
     _subscription = null;
     state = const GuidanceState();

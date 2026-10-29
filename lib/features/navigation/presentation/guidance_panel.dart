@@ -79,7 +79,10 @@ class GuidancePanel extends ConsumerWidget {
                 state.status == GuidanceStatus.failed)
               Expanded(
                 child: FilledButton(
-                  onPressed: notifier.resume,
+                  onPressed: () {
+                    notifier.resume();
+                    onFollow();
+                  },
                   child: const Text('안내 계속'),
                 ),
               )

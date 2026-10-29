@@ -37,6 +37,14 @@ void main() {
     expect(platform.settings?.timeLimit, const Duration(seconds: 20));
   });
 
+  test('guidance requests fresh positions even without movement', () async {
+    final result =
+        await repository.watchLocation().first as Success<LocationFix>;
+    expect(result.value.coordinate.latitude, platform.position.latitude);
+    expect(platform.settings?.distanceFilter, 0);
+    expect(platform.settings?.accuracy, LocationAccuracy.high);
+  });
+
   for (final permission in LocationPermission.values) {
     test('maps platform permission $permission to a domain value', () async {
       platform.permission = permission;
@@ -104,6 +112,12 @@ class FakeLocationPlatform extends GeolocatorPlatform {
   Position position = positionAt();
   LocationSettings? settings;
   Object? error;
+
+  @override
+  Stream<Position> getPositionStream({LocationSettings? locationSettings}) {
+    settings = locationSettings;
+    return Stream.value(position);
+  }
 
   @override
   Future<LocationPermission> checkPermission() async => permission;

@@ -32,6 +32,44 @@ LocationFix fix(
 );
 
 void main() {
+  testWidgets(
+    'a silent GPS stream becomes weak and a fresh fix recovers guidance',
+    (tester) async {
+      final updates = StreamController<Result<LocationFix>>();
+      final repository = FakeLocationRepository()
+        ..location = Result.success(fix(127.03))
+        ..updates = updates.stream;
+      final container = ProviderContainer(
+        overrides: [locationRepositoryProvider.overrideWithValue(repository)],
+      );
+      container.listen(navigationProvider, (_, _) {});
+      final notifier = container.read(navigationProvider.notifier);
+      notifier.start(route);
+      await tester.pump();
+      expect(
+        container.read(navigationProvider).status,
+        GuidanceStatus.following,
+      );
+      final before = container.read(navigationProvider).progress;
+      await tester.pump(const Duration(seconds: 21));
+      expect(container.read(navigationProvider).status, GuidanceStatus.weakGps);
+      expect(container.read(navigationProvider).progress, same(before));
+      updates.add(Result.success(fix(127.031)));
+      await tester.pump();
+      expect(
+        container.read(navigationProvider).status,
+        GuidanceStatus.following,
+      );
+      notifier.pause();
+      await tester.pump(const Duration(seconds: 21));
+      expect(container.read(navigationProvider).status, GuidanceStatus.paused);
+      notifier.stop();
+      await tester.pump();
+      container.dispose();
+      unawaited(updates.close());
+    },
+  );
+
   test(
     'projection measures halfway, route bearing, and off-route distance',
     () {
