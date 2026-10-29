@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'place_search_notifier.dart';
+part of 'place_search_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -49,59 +49,52 @@ final class PlaceRepositoryProvider
   }
 }
 
-String _$placeRepositoryHash() => r'd3f2f600bc70aea131004dc3cca859814cca8ee0';
+String _$placeRepositoryHash() => r'a79441dc205872f82dbda6c31dcb696afd452175';
 
-@ProviderFor(PlaceSearchNotifier)
-final placeSearchProvider = PlaceSearchNotifierProvider._();
+@ProviderFor(searchPlacesUseCase)
+final searchPlacesUseCaseProvider = SearchPlacesUseCaseProvider._();
 
-final class PlaceSearchNotifierProvider
-    extends $NotifierProvider<PlaceSearchNotifier, AsyncValue<List<Place>>> {
-  PlaceSearchNotifierProvider._()
+final class SearchPlacesUseCaseProvider
+    extends
+        $FunctionalProvider<
+          SearchPlacesUseCase,
+          SearchPlacesUseCase,
+          SearchPlacesUseCase
+        >
+    with $Provider<SearchPlacesUseCase> {
+  SearchPlacesUseCaseProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'placeSearchProvider',
+        name: r'searchPlacesUseCaseProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$placeSearchNotifierHash();
+  String debugGetCreateSourceHash() => _$searchPlacesUseCaseHash();
 
   @$internal
   @override
-  PlaceSearchNotifier create() => PlaceSearchNotifier();
+  $ProviderElement<SearchPlacesUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SearchPlacesUseCase create(Ref ref) {
+    return searchPlacesUseCase(ref);
+  }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(AsyncValue<List<Place>> value) {
+  Override overrideWithValue(SearchPlacesUseCase value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<AsyncValue<List<Place>>>(value),
+      providerOverride: $SyncValueProvider<SearchPlacesUseCase>(value),
     );
   }
 }
 
-String _$placeSearchNotifierHash() =>
-    r'9b7ae0a6f209a8a4b9ffde9614e9d0e661deef31';
-
-abstract class _$PlaceSearchNotifier
-    extends $Notifier<AsyncValue<List<Place>>> {
-  AsyncValue<List<Place>> build();
-  @$mustCallSuper
-  @override
-  WhenComplete runBuild() {
-    final ref =
-        this.ref as $Ref<AsyncValue<List<Place>>, AsyncValue<List<Place>>>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<Place>>, AsyncValue<List<Place>>>,
-              AsyncValue<List<Place>>,
-              Object?,
-              Object?
-            >;
-    return element.handleCreate(ref, build);
-  }
-}
+String _$searchPlacesUseCaseHash() =>
+    r'696486b4e2556d15a2c472e565e559c7b9988b23';

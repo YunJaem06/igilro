@@ -13,6 +13,7 @@ import 'package:igilro/features/place_search/domain/search_places_use_case.dart'
 import 'package:igilro/features/place_search/data/place_search_dto.dart';
 import 'package:igilro/features/place_search/data/place_mapper.dart';
 import 'package:igilro/features/place_search/data/place_repository_impl.dart';
+import 'package:igilro/features/place_search/data/datasources/place_remote_data_source.dart';
 import 'package:igilro/features/place_search/presentation/place_search_notifier.dart';
 
 import '../../helpers/fake_http_client_adapter.dart';
@@ -84,7 +85,10 @@ void main() {
             : jsonResponse(jsonEncode(body())),
       );
       dio.httpClientAdapter = adapter;
-      final repository = PlaceRepositoryImpl(DioClient(dio));
+      final repository = PlaceRepositoryImpl(
+        PlaceRemoteDataSource(DioClient(dio)),
+        const PlaceMapper(),
+      );
       expect(await repository.search('서울숲 & 출입구'), isA<Success<List<Place>>>());
       expect(adapter.requests.single.path, '/api/v1/places/search');
       expect(adapter.requests.single.queryParameters, {'query': '서울숲 & 출입구'});
@@ -97,7 +101,8 @@ void main() {
     },
   );
   test('empty search result remains empty and query validation does not send requests', () async {
-    final repository = FakePlaceRepository();
+    final repository = FakePlaceRepository()
+      ..response = const Result.success([]);
     final useCase = SearchPlacesUseCase(repository);
     expect(await useCase('   '), isA<Failed<List<Place>>>());
     expect(await useCase('a\u0000b'), isA<Failed<List<Place>>>());
@@ -113,23 +118,23 @@ void main() {
       );
       container.listen(placeSearchProvider, (_, _) {});
       final notifier = container.read(placeSearchProvider.notifier);
-      notifier.query('서울');
+      notifier.updateQuery('서울');
       await tester.pump(const Duration(milliseconds: 300));
       expect(repository.queries, isEmpty);
       final first = Completer<Result<List<Place>>>();
       repository.pending = first.future;
-      notifier.query('서울숲');
+      notifier.updateQuery('서울숲');
       await tester.pump(const Duration(milliseconds: 350));
       final second = Completer<Result<List<Place>>>();
       repository.pending = second.future;
-      notifier.query('입구');
+      notifier.updateQuery('입구');
       await tester.pump(const Duration(milliseconds: 350));
       second.complete(const Result.success([place]));
       await tester.pump();
       first.complete(const Result.failure(Failure(type: FailureType.network)));
       await tester.pump();
       expect(repository.queries, ['서울숲', '입구']);
-      expect(container.read(placeSearchProvider).asData!.value.single, place);
+      expect(container.read(placeSearchProvider).asData!.value!.single, place);
       container.dispose();
     },
   );

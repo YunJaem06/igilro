@@ -174,6 +174,8 @@ Android는 AGP 9.1과 `android.builtInKotlin=true`를 사용합니다. `settings
 
 2026-10-29 구현 점검 후 테스트 270개, 정적 분석·포맷 검사와 Android debug APK 빌드가 통과했습니다. SDK 플랫폼 경계를 대체한 테스트에서 같은 전체 경로의 구간 색상 변경·삭제·스타일 재구성·출입 지점 tap 전달을 검증하고, 화면 테스트에서 지도 좌표 확정 → 두 모드 비교 → 구간 표시 → 전체 경로 GPS 안내를 확인했습니다. GPS 갱신 중단 시 20초 후 신호 대기로 전환하고 새 위치로 복구하며, 안내 재개 시 카메라 추종을 다시 켭니다. 지도 초기화 중 해제 후 후속 SDK 호출이 이어지지 않는지도 재현 테스트로 확인했습니다. 실제 서버의 coverage와 새 재현 예제도 Dio/DTO/Mapper로 검증했습니다. 휴대폰 화면·현장 보행과 iOS 기기 확인은 별도입니다.
 
+같은 날 원격 main의 장소 검색·도보 결과 카드·크기 조절 패널·서버 검증 기록을 통합했습니다. 장소 검색의 DTO·Domain·Repository·Provider를 하나로 공유하며 한글 조합 입력 중에는 요청을 지연하고 공급자 출처와 장소 ID를 보존합니다. 경로 요청에는 기존 계약 필드만 전달합니다. 하단 손잡이로 지도와 결과 영역 크기를 조절할 수 있고, 일반 도보의 건물 그늘 요약과 상세 카드도 유지합니다. 모델 예측 결과와 직접 높이 평가 결과는 계속 구분합니다. 통합 후 전체 테스트 320개·정적 분석·포맷·Android debug 빌드가 통과했습니다. 원격의 기존 실서버·기기 검증 기록은 [별도 문서](docs/server_integration_verification.md)에 보존하며 현재 UI에 맞춘 기기 테스트 실행은 별도로 수행합니다.
+
 ```sh
 dart run build_runner build
 dart format --output=none --set-exit-if-changed lib test integration_test tool

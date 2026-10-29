@@ -94,10 +94,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('22분 · 1.7km'), findsOneWidget);
+      expect(find.textContaining('보행로 출발점:'), findsNothing);
+      expect(find.text('그늘 정보 없음'), findsOneWidget);
+      await tester.ensureVisible(find.text('상세 정보'));
+      await tester.tap(find.text('상세 정보'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('보행로 출발점:'), findsOneWidget);
       expect(find.textContaining('보행로 도착점:'), findsOneWidget);
       expect(find.text('© OpenStreetMap contributors'), findsOneWidget);
-      expect(find.textContaining('그늘'), findsNothing);
     },
   );
 

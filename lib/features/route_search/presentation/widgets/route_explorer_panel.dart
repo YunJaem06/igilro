@@ -11,6 +11,8 @@ import '../providers/route_prediction_providers.dart';
 import '../providers/route_search_kind_notifier.dart';
 import '../providers/route_search_notifier.dart';
 import '../providers/route_selection_notifier.dart';
+import 'route_result_card.dart';
+import 'route_shade_info.dart';
 
 class RouteExplorerPanel extends ConsumerWidget {
   const RouteExplorerPanel({
@@ -172,18 +174,18 @@ class RouteExplorerPanel extends ConsumerWidget {
             '${_duration(general.routes.first.duration)} · ${_distance(general.routes.first.distanceMeters)}',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
+          RouteShadeInfo(
+            route: general.routes.first,
+            evaluatedAt: general.evaluatedAt,
+          ),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => _details(context, '경로 정보', [
-                Text('거리와 시간은 보행로 시작점과 끝점 기준이에요.'),
-                Text(
-                  '출발지 접근 ${_distance(general.snapping.origin.distanceMeters)}',
+                RouteResultCard(
+                  result: general,
+                  endpoints: ref.read(routeSelectionProvider).endpoints,
                 ),
-                Text(
-                  '도착지 접근 ${_distance(general.snapping.destination.distanceMeters)}',
-                ),
-                SelectableText(general.attribution),
                 ..._placeSources(ref),
               ]),
               child: const Text('상세 보기'),

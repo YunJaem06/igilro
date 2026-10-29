@@ -15,15 +15,6 @@ class RouteSelectionNotifier extends _$RouteSelectionNotifier {
   void setEndpoints(RouteEndpoints endpoints) =>
       state = RouteSelectionState(endpoints: endpoints);
 
-  void setPoint(RouteEndpoint endpoint, RoutePoint point) =>
-      state = state.copyWith(
-        endpoints: endpoint == RouteEndpoint.origin
-            ? state.endpoints.copyWith(origin: point)
-            : state.endpoints.copyWith(destination: point),
-        selecting: null,
-        candidate: null,
-      );
-
   void beginSelection(RouteEndpoint endpoint) => state = state.copyWith(
     selecting: endpoint,
     candidate: switch (endpoint) {
@@ -46,11 +37,15 @@ class RouteSelectionNotifier extends _$RouteSelectionNotifier {
     final candidate = state.candidate;
     final selecting = state.selecting;
     if (candidate == null || selecting == null) return;
+    setPoint(selecting, candidate);
+  }
+
+  void setPoint(RouteEndpoint endpoint, RoutePoint point) {
     state = state.copyWith(
-      endpoints: switch (selecting) {
-        RouteEndpoint.origin => state.endpoints.copyWith(origin: candidate),
+      endpoints: switch (endpoint) {
+        RouteEndpoint.origin => state.endpoints.copyWith(origin: point),
         RouteEndpoint.destination => state.endpoints.copyWith(
-          destination: candidate,
+          destination: point,
         ),
       },
       selecting: null,

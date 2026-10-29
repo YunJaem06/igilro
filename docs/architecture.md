@@ -132,6 +132,8 @@ RouteSearchKindNotifier가 일반 도보와 모델 예측을 구분한다. Route
 
 PlaceSearchNotifier는 350ms debounce와 revision으로 이전 결과를 무시하며, PlaceRepositoryImpl은 Dio CancelToken을 소유한다. 검색 결과를 선택하면 RoutePoint에 이름·좌표·출처를 보존한다. 검색 공급자 인증 키는 서버 책임이다. 상단 입력과 하단 패널은 UI 조립을 맡고 경로 계산을 직접 수행하지 않는다.
 
+원격 구현 통합 후 장소 검색은 domain/entities·repositories·usecases, data/dto·datasources·mappers·repositories, presentation/providers의 한 모델과 의존성을 공유한다. 이전 import 경로는 이 구현을 재공개한다. 전체 검색 페이지와 간단한 입력 시트 모두 같은 Provider를 사용하고 IME 조합이 끝난 뒤 검색한다. RoutePoint는 공급자 placeId와 출처를 보존하되 경로 요청에는 좌표만 전달한다. MapSearchSheet는 지도 자체의 높이를 바꾸고 네이티브 지도 idle 이후 카메라를 다시 맞춘다. 일반 도보의 RouteShadeInfo·RouteResultCard는 기존 높이 평가 모델만 사용하며 예측 구간 DTO와 혼합하지 않는다.
+
 NavigationNotifier는 WatchLocationUseCase로 권한 확인 후 전경 위치 스트림을 구독한다. 순수 Dart measureProgress는 경로 투영·남은 거리·방향·도착 조건을 계산한다. 부정확하거나 오래된 위치를 거르고 연속 이탈과 접근 중 상태를 구분한다. 이동하지 않아도 위치 갱신을 요청하고 마지막 유효 위치가 20초를 넘으면 weakGps로 전환하며 새로운 유효 위치로 복구한다. 일시 정지·종료·해제 시 스트림·위치 만료 타이머·미리보기 타이머를 취소한다. 안내 재개는 위치 구독과 카메라 추종을 함께 복구한다. HomePage는 앱 수명 주기의 정지를 연결하고 지도 카메라로 위치·방향을 전달한다. Mapbox SDK 객체는 지도 adapter에만 존재하며 비동기 초기화 단계 사이에 해제 여부를 확인한다.
 
 PredictionCoverageNotifier는 별도 coverage 요청 수명을 소유하며 명시적 재시도로 복구한다. Repository의 coverage CancelToken은 경로 검색 토큰과 분리하여 두 요청이 서로 취소하지 않는다. Coverage DTO/Mapper는 bounds·center·보행망·출입 지점·연결성·출처를 순수 Domain으로 변환하고 bounds 순서·유한 좌표·정수 개수를 검증한다. HomePage는 초기 카메라와 ‘서울숲으로 이동’을 서버 bounds에 맞추고 MapCoverage로 바꾸어 지도에 전달한다. 범위 안의 연결 가능 여부를 클라이언트가 보장하지 않는다.

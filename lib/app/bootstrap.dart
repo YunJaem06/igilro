@@ -12,7 +12,7 @@ import 'di/app_providers.dart';
 import 'di/location_dependencies.dart';
 import 'di/route_dependencies.dart';
 import 'di/route_prediction_dependencies.dart';
-import '../features/place_search/data/place_repository_impl.dart';
+import 'di/place_dependencies.dart';
 import '../features/place_search/presentation/place_search_notifier.dart';
 
 void bootstrap() {
@@ -34,8 +34,10 @@ void bootstrap() {
           (ref) => createLocationRepository(),
         ),
         placeRepositoryProvider.overrideWith((ref) {
-          final repository = PlaceRepositoryImpl(ref.watch(dioClientProvider));
-          ref.onDispose(repository.cancel);
+          final repository = createPlaceRepository(
+            ref.watch(dioClientProvider),
+          );
+          ref.onDispose(repository.cancelSearch);
           return repository;
         }),
         routeRepositoryProvider.overrideWith((ref) {

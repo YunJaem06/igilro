@@ -4,6 +4,8 @@
 
 ## Flutter 현재 상태
 
+원격 main의 장소 검색과 일반 도보 결과 UI를 모델 예측 클라이언트에 통합했다. Place의 이름·좌표·주소·공급자 ID·출처를 함께 보존하지만 경로 POST 본문에는 정의된 좌표·mode·출발 시각만 보낸다. 일반 도보의 직접 높이 평가 카드와 공공 3D 모델 예측의 그늘 구간 표시는 각각 별도 Domain을 사용한다. 양쪽의 테스트와 실제 서버 검증 기록을 보존했다.
+
 - 앱 기반: Flutter/Dart, Riverpod 상태관리·DI, go_router, Dio, Freezed/json_serializable.
 - API 주소는 빌드 시 `API_BASE_URL`로 주입한다. 서버 origin만 사용하며 `/api/v1`은 기능의 endpoint 경로에 포함한다.
 - `APP_ENV`는 development/staging/production이다. 개발 외에는 HTTPS 주소가 필요하다.

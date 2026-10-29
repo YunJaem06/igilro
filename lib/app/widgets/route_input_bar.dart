@@ -132,6 +132,7 @@ class RouteInputBar extends ConsumerWidget {
                   source: RoutePointSource.place,
                   name: place.name,
                   address: place.address,
+                  placeId: place.id,
                   attributions: place.attributions,
                 ),
               );

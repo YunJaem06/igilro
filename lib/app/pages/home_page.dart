@@ -27,6 +27,7 @@ import '../../features/route_search/presentation/widgets/route_explorer_panel.da
 import '../debug/prediction_pilot_button.dart';
 import '../widgets/route_input_bar.dart';
 import '../widgets/prediction_coverage_control.dart';
+import '../widgets/map_search_sheet.dart';
 
 /// App composition joins map, route selection and foreground guidance.
 class HomePage extends ConsumerStatefulWidget {
@@ -38,6 +39,7 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage>
     with WidgetsBindingObserver {
+  final _panelScrollController = ScrollController();
   @override
   void initState() {
     super.initState();
@@ -47,6 +49,7 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _panelScrollController.dispose();
     super.dispose();
   }
 
@@ -413,122 +416,111 @@ class _HomePageState extends ConsumerState<HomePage>
                   ),
                 ),
               Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Listener(
-                      onPointerDown: (_) {
-                        if (nav.active) {
-                          ref.read(mapProvider.notifier).stopFollowing();
-                        }
-                      },
-                      child: MapCanvas(
-                        surfaceBuilder: widget.mapSurfaceBuilder,
-                        routePath: path,
-                        alternativeRoutePath: alternative,
-                        routeSegments: routeSegments,
-                        coverage: mapCoverage,
-                        onAccessPointTapped: nav.active
-                            ? null
-                            : _selectAccessPoint,
-                        markers: [
-                          if (selection.endpoints.origin != null &&
-                              selection.selecting != RouteEndpoint.origin)
-                            MapMarker(
-                              coordinate:
-                                  selection.endpoints.origin!.coordinate,
-                              role: MapMarkerRole.origin,
-                            ),
-                          if (selection.endpoints.destination != null &&
-                              selection.selecting != RouteEndpoint.destination)
-                            MapMarker(
-                              coordinate:
-                                  selection.endpoints.destination!.coordinate,
-                              role: MapMarkerRole.destination,
-                            ),
-                          if (selection.candidate != null)
-                            MapMarker(
-                              coordinate: selection.candidate!.coordinate,
-                              role: MapMarkerRole.selection,
-                            ),
-                        ],
-                        onCoordinateTapped: nav.active
-                            ? null
-                            : ref.read(routeSelectionProvider.notifier).preview,
+                child: MapSearchSheet(
+                  key: ValueKey(('search-panel', nav.active)),
+                  scrollController: _panelScrollController,
+                  scrollable: false,
+                  initialFraction: constraints.maxHeight < 400
+                      ? 0.60
+                      : nav.active
+                      ? 0.30
+                      : 0.38,
+                  map: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Listener(
+                        onPointerDown: (_) {
+                          if (nav.active) {
+                            ref.read(mapProvider.notifier).stopFollowing();
+                          }
+                        },
+                        child: MapCanvas(
+                          surfaceBuilder: widget.mapSurfaceBuilder,
+                          routePath: path,
+                          alternativeRoutePath: alternative,
+                          routeSegments: routeSegments,
+                          coverage: mapCoverage,
+                          onAccessPointTapped: nav.active
+                              ? null
+                              : _selectAccessPoint,
+                          markers: [
+                            if (selection.endpoints.origin != null &&
+                                selection.selecting != RouteEndpoint.origin)
+                              MapMarker(
+                                coordinate:
+                                    selection.endpoints.origin!.coordinate,
+                                role: MapMarkerRole.origin,
+                              ),
+                            if (selection.endpoints.destination != null &&
+                                selection.selecting !=
+                                    RouteEndpoint.destination)
+                              MapMarker(
+                                coordinate:
+                                    selection.endpoints.destination!.coordinate,
+                                role: MapMarkerRole.destination,
+                              ),
+                            if (selection.candidate != null)
+                              MapMarker(
+                                coordinate: selection.candidate!.coordinate,
+                                role: MapMarkerRole.selection,
+                              ),
+                          ],
+                          onCoordinateTapped: nav.active
+                              ? null
+                              : ref
+                                    .read(routeSelectionProvider.notifier)
+                                    .preview,
+                        ),
                       ),
-                    ),
-                    if (showPredictionCoverage && !nav.active)
+                      if (showPredictionCoverage && !nav.active)
+                        Positioned(
+                          left: 12,
+                          bottom: 12,
+                          right: 76,
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: PredictionCoverageControl(
+                              onShow: _showCoverage,
+                            ),
+                          ),
+                        ),
+                      if (routeSegments.isNotEmpty)
+                        const Positioned(
+                          left: 12,
+                          top: 12,
+                          right: 76,
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: ShadeLegend(),
+                          ),
+                        ),
                       Positioned(
-                        left: 12,
-                        bottom: 12,
-                        right: 76,
-                        child: Align(
-                          alignment: Alignment.bottomLeft,
-                          child: PredictionCoverageControl(
-                            onShow: _showCoverage,
-                          ),
-                        ),
-                      ),
-                    if (routeSegments.isNotEmpty)
-                      const Positioned(
-                        left: 12,
                         top: 12,
-                        right: 76,
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: ShadeLegend(),
+                        right: 12,
+                        child: Column(
+                          children: [
+                            FloatingActionButton.small(
+                              heroTag: 'map3d',
+                              onPressed: ref
+                                  .read(mapProvider.notifier)
+                                  .toggle3D,
+                              tooltip: mapState.is3D ? '2D로 보기' : '3D로 보기',
+                              child: Text(mapState.is3D ? '2D' : '3D'),
+                            ),
+                            const SizedBox(height: 8),
+                            FloatingActionButton.small(
+                              heroTag: 'locate',
+                              onPressed: nav.active ? _follow : _locate,
+                              tooltip: nav.active ? '내 위치 따라가기' : '현재 위치 보기',
+                              child: const Icon(Icons.my_location),
+                            ),
+                          ],
                         ),
                       ),
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Column(
-                        children: [
-                          FloatingActionButton.small(
-                            heroTag: 'map3d',
-                            onPressed: ref.read(mapProvider.notifier).toggle3D,
-                            tooltip: mapState.is3D ? '2D로 보기' : '3D로 보기',
-                            child: Text(mapState.is3D ? '2D' : '3D'),
-                          ),
-                          const SizedBox(height: 8),
-                          FloatingActionButton.small(
-                            heroTag: 'locate',
-                            onPressed: nav.active ? _follow : _locate,
-                            tooltip: nav.active ? '내 위치 따라가기' : '현재 위치 보기',
-                            child: const Icon(Icons.my_location),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x14000000),
-                      blurRadius: 12,
-                      offset: Offset(0, -3),
-                    ),
-                  ],
-                ),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight:
-                        constraints.maxHeight *
-                        (constraints.maxHeight < 400
-                            ? 0.60
-                            : nav.active
-                            ? 0.30
-                            : 0.38),
+                    ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                    padding: EdgeInsets.zero,
                     child: nav.active
                         ? SingleChildScrollView(
                             child: GuidancePanel(

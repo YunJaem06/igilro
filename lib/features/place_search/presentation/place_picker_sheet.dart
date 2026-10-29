@@ -24,9 +24,38 @@ class PlacePickerSheet extends ConsumerStatefulWidget {
 
 class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
   String _query = '';
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_changed);
+  }
+
+  void _changed() {
+    final value = _controller.value;
+    setState(() => _query = value.text.trim());
+    ref
+        .read(placeSearchProvider.notifier)
+        .updateQuery(
+          value.text,
+          composing: value.composing.isValid && !value.composing.isCollapsed,
+        );
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_changed);
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final results = ref.watch(placeSearchProvider);
+    final currentResults = ref.watch(placeSearchProvider);
+    final results = _query.isEmpty
+        ? const AsyncData<List<Place>?>(null)
+        : currentResults;
     final available =
         (MediaQuery.sizeOf(context).height -
                 MediaQuery.viewInsetsOf(context).bottom -
@@ -47,6 +76,7 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
               Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               TextField(
+                controller: _controller,
                 autofocus: true,
                 maxLength: 100,
                 decoration: const InputDecoration(
@@ -55,10 +85,6 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
                   border: OutlineInputBorder(),
                   counterText: '',
                 ),
-                onChanged: (value) {
-                  setState(() => _query = value.trim());
-                  ref.read(placeSearchProvider.notifier).query(value);
-                },
               ),
               const SizedBox(height: 8),
               ?widget.currentLocationControl,
@@ -84,7 +110,7 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
                     _ => '장소를 찾지 못했어요. 다시 입력하거나 지도에서 선택해 주세요.',
                   }, textAlign: TextAlign.center),
                 ),
-                data: (places) => places.isEmpty
+                data: (places) => places == null || places.isEmpty
                     ? Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(

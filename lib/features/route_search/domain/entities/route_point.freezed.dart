@@ -18,6 +18,7 @@ mixin _$RoutePoint {
   RoutePointSource get source;
   String? get name;
   String? get address;
+  String? get placeId;
   List<String> get attributions;
 
   /// Create a copy of RoutePoint
@@ -40,6 +41,8 @@ mixin _$RoutePoint {
             (identical(other.name, _this.name) || other.name == _this.name) &&
             (identical(other.address, _this.address) ||
                 other.address == _this.address) &&
+            (identical(other.placeId, _this.placeId) ||
+                other.placeId == _this.placeId) &&
             const DeepCollectionEquality().equals(
               other.attributions,
               _this.attributions,
@@ -55,6 +58,7 @@ mixin _$RoutePoint {
       _this.source,
       _this.name,
       _this.address,
+      _this.placeId,
       const DeepCollectionEquality().hash(_this.attributions),
     );
   }
@@ -62,7 +66,7 @@ mixin _$RoutePoint {
   @override
   String toString() {
     final _this = this as RoutePoint;
-    return 'RoutePoint(coordinate: ${_this.coordinate}, source: ${_this.source}, name: ${_this.name}, address: ${_this.address}, attributions: ${_this.attributions})';
+    return 'RoutePoint(coordinate: ${_this.coordinate}, source: ${_this.source}, name: ${_this.name}, address: ${_this.address}, placeId: ${_this.placeId}, attributions: ${_this.attributions})';
   }
 }
 
@@ -78,6 +82,7 @@ abstract mixin class $RoutePointCopyWith<$Res> {
     RoutePointSource source,
     String? name,
     String? address,
+    String? placeId,
     List<String> attributions,
   });
 
@@ -100,6 +105,7 @@ class _$RoutePointCopyWithImpl<$Res> implements $RoutePointCopyWith<$Res> {
     Object? source = null,
     Object? name = freezed,
     Object? address = freezed,
+    Object? placeId = freezed,
     Object? attributions = null,
   }) {
     return _then(
@@ -119,6 +125,10 @@ class _$RoutePointCopyWithImpl<$Res> implements $RoutePointCopyWith<$Res> {
         address: freezed == address
             ? _self.address
             : address // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        placeId: freezed == placeId
+            ? _self.placeId
+            : placeId // ignore: cast_nullable_to_non_nullable
                   as String?,
         attributions: null == attributions
             ? _self.attributions
@@ -237,6 +247,7 @@ extension RoutePointPatterns on RoutePoint {
       RoutePointSource source,
       String? name,
       String? address,
+      String? placeId,
       List<String> attributions,
     )?
     $default, {
@@ -250,6 +261,7 @@ extension RoutePointPatterns on RoutePoint {
           _that.source,
           _that.name,
           _that.address,
+          _that.placeId,
           _that.attributions,
         );
       case _:
@@ -277,6 +289,7 @@ extension RoutePointPatterns on RoutePoint {
       RoutePointSource source,
       String? name,
       String? address,
+      String? placeId,
       List<String> attributions,
     )
     $default,
@@ -289,6 +302,7 @@ extension RoutePointPatterns on RoutePoint {
           _that.source,
           _that.name,
           _that.address,
+          _that.placeId,
           _that.attributions,
         );
       case _:
@@ -315,6 +329,7 @@ extension RoutePointPatterns on RoutePoint {
       RoutePointSource source,
       String? name,
       String? address,
+      String? placeId,
       List<String> attributions,
     )?
     $default,
@@ -327,6 +342,7 @@ extension RoutePointPatterns on RoutePoint {
           _that.source,
           _that.name,
           _that.address,
+          _that.placeId,
           _that.attributions,
         );
       case _:
@@ -343,6 +359,7 @@ class _RoutePoint implements RoutePoint {
     required this.source,
     this.name,
     this.address,
+    this.placeId,
     List<String> attributions = const [],
   }) : _attributions = attributions;
 
@@ -354,6 +371,8 @@ class _RoutePoint implements RoutePoint {
   final String? name;
   @override
   final String? address;
+  @override
+  final String? placeId;
   final List<String> _attributions;
   @override
   @JsonKey()
@@ -381,6 +400,7 @@ class _RoutePoint implements RoutePoint {
             (identical(other.source, source) || other.source == source) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.address, address) || other.address == address) &&
+            (identical(other.placeId, placeId) || other.placeId == placeId) &&
             const DeepCollectionEquality().equals(
               other.attributions,
               _attributions,
@@ -395,13 +415,14 @@ class _RoutePoint implements RoutePoint {
       source,
       name,
       address,
+      placeId,
       const DeepCollectionEquality().hash(_attributions),
     );
   }
 
   @override
   String toString() {
-    return 'RoutePoint(coordinate: $coordinate, source: $source, name: $name, address: $address, attributions: $attributions)';
+    return 'RoutePoint(coordinate: $coordinate, source: $source, name: $name, address: $address, placeId: $placeId, attributions: $attributions)';
   }
 }
 
@@ -419,6 +440,7 @@ abstract mixin class _$RoutePointCopyWith<$Res>
     RoutePointSource source,
     String? name,
     String? address,
+    String? placeId,
     List<String> attributions,
   });
 
@@ -442,6 +464,7 @@ class __$RoutePointCopyWithImpl<$Res> implements _$RoutePointCopyWith<$Res> {
     Object? source = null,
     Object? name = freezed,
     Object? address = freezed,
+    Object? placeId = freezed,
     Object? attributions = null,
   }) {
     return _then(
@@ -461,6 +484,10 @@ class __$RoutePointCopyWithImpl<$Res> implements _$RoutePointCopyWith<$Res> {
         address: freezed == address
             ? _self.address
             : address // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        placeId: freezed == placeId
+            ? _self.placeId
+            : placeId // ignore: cast_nullable_to_non_nullable
                   as String?,
         attributions: null == attributions
             ? _self._attributions

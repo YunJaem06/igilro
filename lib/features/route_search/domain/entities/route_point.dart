@@ -13,6 +13,7 @@ abstract class RoutePoint with _$RoutePoint {
     required RoutePointSource source,
     String? name,
     String? address,
+    String? placeId,
     @Default([]) List<String> attributions,
   }) = _RoutePoint;
 }

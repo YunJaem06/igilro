@@ -234,6 +234,23 @@ void main() {
   });
 
   testWidgets(
+    'resizing the merged search panel preserves the selected shade route',
+    (tester) async {
+      await mount(tester);
+      await selectEntries(tester);
+      await tap(tester, '그늘길 비교');
+      final before = map(tester);
+      final height = tester.getSize(find.byType(MapCanvas)).height;
+      await tester.tap(find.byTooltip('검색 패널 펼치기'));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(find.byType(MapCanvas)).height, lessThan(height));
+      expect(map(tester).routePath, before.routePath);
+      expect(map(tester).routeSegments, before.routeSegments);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'outside-area failure clears paint and offers the server coverage camera action',
     (tester) async {
       await mount(tester);

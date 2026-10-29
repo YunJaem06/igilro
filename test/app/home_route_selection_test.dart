@@ -291,6 +291,7 @@ void main() {
           .destination!;
       expect(point.coordinate, destination);
       expect(point.name, '서울숲 출입구');
+      expect(point.placeId, 'geoapify:entry');
       expect(point.attributions.single, contains('Geoapify'));
       expect(find.text('서울숲 출입구'), findsOneWidget);
       expect(visibleMarkers.single.coordinate, destination);
@@ -370,6 +371,37 @@ void main() {
       destination,
     );
   });
+
+  testWidgets(
+    'the compact place sheet defers Korean IME search until composition ends',
+    (tester) async {
+      await mount(tester);
+      await tap(tester, find.byKey(const ValueKey('route-origin')));
+      await tester.showKeyboard(find.byType(TextField));
+      tester.testTextInput.updateEditingValue(
+        const TextEditingValue(
+          text: '서울',
+          selection: TextSelection.collapsed(offset: 2),
+          composing: TextRange(start: 0, end: 2),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      final repository =
+          container.read(placeRepositoryProvider) as FakePlaceRepository;
+      expect(repository.queries, isEmpty);
+      tester.testTextInput.updateEditingValue(
+        const TextEditingValue(
+          text: '서울',
+          selection: TextSelection.collapsed(offset: 2),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 351));
+      await tester.pumpAndSettle();
+      expect(repository.queries, ['서울']);
+      Navigator.of(tester.element(find.text('어디서 출발할까요?'))).pop();
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('cancel discards preview without replacing the committed pin', (
     tester,
