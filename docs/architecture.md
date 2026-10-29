@@ -17,6 +17,7 @@ Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기
 | `app/pages/home_page.dart` | 지도/위치/경로 입력 View 조립, 위치 성공과 지도 터치를 선택 상태로 연결, Domain 좌표를 지도 렌더링 값으로 변환 |
 | `app/di/location_dependencies.dart` | 위치 Repository 구현체, 플랫폼 DataSource와 Mapper 조립 |
 | `app/di/route_dependencies.dart` | 경로 검색 Repository 구현체, HTTP DataSource와 Mapper 조립 |
+| `app/di/route_prediction_dependencies.dart` | 기존 경로와 독립적인 공공 3D 모델 예측 Repository·DataSource·Mapper 조립 |
 | `core/config/app_config.dart` | 개발·스테이징·운영 환경과 API 서버 origin 검증 |
 | `core/network/dio_client.dart` | JSON 통신 설정, GET/POST, 요청 취소, 통신 예외 변환 |
 | `core/network/api_error_dto.dart` | 공통 서버 오류 JSON의 code/requestId 역직렬화 |
@@ -40,6 +41,10 @@ Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기
 | `features/route_search/presentation/providers/route_search_notifier.dart` | 명시적 검색, 로딩·성공·실패 상태, 입력 변경 시 취소와 늦은 응답 무시 |
 | `features/route_search/presentation/widgets/route_selection_panel.dart` | 선택 입력과 안내, 지도 준비 상태에 따른 선택 확정/두 지점 보기 버튼 |
 | `features/route_search/presentation/widgets/route_search_control.dart` | 검색·재시도 버튼, 시간·거리·스냅 위치·접근 거리와 출처 표시 |
+| `features/route_search/domain/entities/model_route_prediction.dart` | 모델 예측 경로·비율·스냅·평가 시각·버전·품질·진단값; 기존 높이 기반 그늘과 별도 타입 |
+| `features/route_search/data/dto/model_route_prediction_dto.dart` | 예측 API만의 요청/응답 DTO와 좌표·LineString·스냅·예측값 역직렬화 |
+| `features/route_search/presentation/providers/route_prediction_notifier.dart` | 예측 검색, 입력·시각·모드·검색 종류 변경 시 취소와 늦은 응답 무시 |
+| `features/route_search/presentation/widgets/route_prediction_control.dart` | 시각·빠른 길/그늘 우선 선택, 예측 비율·미검증·자료 한계·출처 표시 |
 | `features/map/presentation/state/map_marker.dart` | 경로 Domain에 의존하지 않는 좌표와 마커 역할의 렌더링 입력 |
 | `features/map/presentation/adapters/map_pin_image.dart` | 코드로 그린 출발/도착/선택 핀을 네이티브 annotation 이미지로 변환 |
 
@@ -54,6 +59,8 @@ lib/
   features/
     map/
     location/
+    place_search/
+    navigation/
     route_search/
     route_result/
     route_preference/
@@ -116,6 +123,26 @@ RouteSearchNotifier는 명시적 버튼 동작에서만 검색한다. 확정 좌
 HomePage는 경로 선택의 좌표·역할을 MapMarker로 변환해 MapCanvas에 전달한다. 지도 feature는 route_search를 import하지 않는다. 확정된 지점 변경은 MapNotifier.framePoints로 연결하며, 후보 위치 변경은 카메라를 이동시키지 않는다. MapboxController는 마커 갱신과 카메라 명령을 분리하고 실제 지도 크기에 맞는 padding으로 두 지점을 맞춘다. Mapbox 3의 TapInteraction.onMap을 네이티브 map 수명에 등록한다. SDK annotation/controller는 순수 상태에 저장하지 않는다.
 
 검색 결과도 HomePage가 조립한다. 성공 결과의 path를 GeoCoordinate 목록인 MapCanvas.routePath로 전달하고 모든 경로 좌표와 입력 핀을 MapNotifier.framePoints에 전달한다. 경로 Domain 모델이나 API DTO를 지도 feature로 넘기지 않는다. 로딩·오류·입력 변경으로 결과가 사라지면 빈 경로를 전달해 이전 선을 제거한다. MapboxController는 전용 PolylineAnnotationManager를 위치·핀보다 먼저 만들고 서버의 스냅 지점 사이 형상만 그린다. 스타일 재로딩은 기존 manager를 제거하고 캐시를 초기화해 같은 경로·마커를 다시 적용한다. MapboxSurface는 프레임 안의 변경을 모아 레이아웃 이후 최신 지도 크기로 SDK 명령을 실행하고, 결과 패널이나 화면 크기 변경 시 전체 범위를 다시 맞춘다.
+
+## 공공 3D 모델 예측 경계
+
+`ModelRoutePredictionResponseDto` → `ModelRoutePredictionMapper` → `ModelRoutePrediction` 경로는 기존 `RouteSearchResponseDto`·`RouteCandidate`와 분리한다. modeledShadeRatio·baselineModeledShadeRatio·physicalShadeCoverage를 metrics.shadeRatio나 shadeEvaluation.AVAILABLE로 바꾸지 않는다. 요청은 mode를 명시하고 날짜를 지정하지 않으면 departureAt 자체를 생략한다. JSON 실수는 num.toDouble을 통해 정수 표기도 수용한다. 응답 버전은 불투명한 문자열로 저장하고 추가 JSON 필드는 허용한다.
+
+RouteSearchKindNotifier가 일반 도보와 모델 예측을 구분한다. RouteComparisonNotifier는 확정 좌표·출발 시각·검색 종류를 관찰하고 변경 시 요청과 결과를 정리한다. CompareRoutePredictionsUseCase는 한 시각으로 fastest/shade를 순차 호출하고 평가 시각·그래프/장면/시간 모델·snapping·기준 시간이 같은지 검증한다. routingModelVersion은 모드별 탐색 알고리즘 식별자이므로 같을 필요가 없다. 카드 선택은 비교 결과를 재사용하고 통신하지 않는다. 실패를 일반 도보의 성공으로 대체하지 않는다. 지도에는 Domain/DTO 대신 선택 경로와 대안 경로의 좌표 목록을 전달한다.
+
+PlaceSearchNotifier는 350ms debounce와 revision으로 이전 결과를 무시하며, PlaceRepositoryImpl은 Dio CancelToken을 소유한다. 검색 결과를 선택하면 RoutePoint에 이름·좌표·출처를 보존한다. 검색 공급자 인증 키는 서버 책임이다. 상단 입력과 하단 패널은 UI 조립을 맡고 경로 계산을 직접 수행하지 않는다.
+
+NavigationNotifier는 WatchLocationUseCase로 권한 확인 후 전경 위치 스트림을 구독한다. 순수 Dart measureProgress는 경로 투영·남은 거리·방향·도착 조건을 계산한다. 부정확하거나 오래된 위치를 거르고 연속 이탈과 접근 중 상태를 구분한다. 이동하지 않아도 위치 갱신을 요청하고 마지막 유효 위치가 20초를 넘으면 weakGps로 전환하며 새로운 유효 위치로 복구한다. 일시 정지·종료·해제 시 스트림·위치 만료 타이머·미리보기 타이머를 취소한다. 안내 재개는 위치 구독과 카메라 추종을 함께 복구한다. HomePage는 앱 수명 주기의 정지를 연결하고 지도 카메라로 위치·방향을 전달한다. Mapbox SDK 객체는 지도 adapter에만 존재하며 비동기 초기화 단계 사이에 해제 여부를 확인한다.
+
+PredictionCoverageNotifier는 별도 coverage 요청 수명을 소유하며 명시적 재시도로 복구한다. Repository의 coverage CancelToken은 경로 검색 토큰과 분리하여 두 요청이 서로 취소하지 않는다. Coverage DTO/Mapper는 bounds·center·보행망·출입 지점·연결성·출처를 순수 Domain으로 변환하고 bounds 순서·유한 좌표·정수 개수를 검증한다. HomePage는 초기 카메라와 ‘서울숲으로 이동’을 서버 bounds에 맞추고 MapCoverage로 바꾸어 지도에 전달한다. 범위 안의 연결 가능 여부를 클라이언트가 보장하지 않는다.
+
+PredictedShadeSegment는 SHADE/SUNLIGHT·전체 꺾임 좌표·누적 거리와 구간 길이를 보존한다. Mapper는 유효한 LineString과 인접 구간의 좌표·거리 연속성, 반올림한 전체 거리와의 오차를 검증한다. HomePage는 이를 MapRouteSegment로 변환한다. MapRoutePaint의 전체 경로와 구간 상태·형상을 모두 비교하므로 경로 좌표가 같아도 시간 변경으로 달라진 구간을 다시 그린다. 이전 응답에 구간이 없으면 중립 선을 유지한다.
+
+MapboxController는 GeoJSON source와 bounds fill/outline·보행망 layer를 관리하고, 대안 경로 → 선택 전체 경로 → 그늘 구간 → 스냅 끝점·현재 위치·선택 핀 순서로 annotation manager를 생성한다. 출입 지점의 SDK tap ID를 MapAccessPoint로 변환하며 앱에서 출발·도착을 확정한다. 스타일 재로딩은 모든 source·manager·렌더링 캐시를 다시 구성한다. DTO와 경로 Domain은 지도 feature로 전달하지 않는다.
+
+3D 조명은 SolarPosition과 Mapbox의 ambient/directional light를 사용한다. evaluatedAt을 조명 기준으로 쓰되 Mapbox 건물과 서버 공공 3D 자료는 다르다. 경로 색상은 서버 shadeSegments만 사용하며 전체 비율에서 구간·접근선·그림자 polygon을 만들지 않는다. 기존 위치 안내에는 색상 구간으로 쪼갠 선이 아닌 선택한 전체 경로를 전달한다.
+
+실제 서버 확인은 `tool/verify_route_predictions.dart`에서 수행한다. 같은 좌표·시각으로 예측 fastest와 shade를 각각 호출하고 평가 시각·보행 그래프 버전·예측 장면 버전·snapping을 비교한다. 고정 수치 확인은 선택 사항이며 데이터 갱신 후에는 일반 동등성 확인만 실행할 수 있다. 2026-10-27에 캡처한 실제 전체 응답은 테스트 fixture이며 앱에서 응답을 고정 반환하는 코드가 아니다.
 
 ## 오류 경계
 

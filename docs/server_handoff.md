@@ -10,7 +10,22 @@
 - JSON 요청/응답, Accept/Content-Type application/json.
 - 연결·송신 timeout 10초, 수신 timeout 30초. 서버는 동기 경로 검색이 이 범위에 들어오는지 측정해 주세요. 장시간 작업이 필요하면 비동기 작업 API를 별도로 합의한다.
 - Flutter Phase 2에서 Mapbox 지도와 현재 위치 기능을 연결했다. Phase 3에서 선택 좌표로 walking/fastest 경로 API를 호출하고 시간·거리·스냅 위치·접근 거리·출처를 표시한다. 응답 geometry의 전체 좌표를 지도 경로선으로 표시하고 전체 경로·입력 핀이 보이도록 카메라를 조정한다. 입력 핀과 경로 끝점 사이에 접근선을 만들어 추가하지 않는다.
-- Phase 3의 출발지/도착지 지도 선택, 현재 위치를 출발지로 사용, 핀 표시·교환·삭제를 구현했다. 앱이 준비한 WGS84 좌표를 경로 검색 요청으로 전달한다. 현재 선택값에는 장소 이름/주소/공급자 ID가 없으며 장소 검색 API 연결 시 추가한다.
+- 출발지/도착지 지도 선택, 현재 위치 출발, 핀 교환·삭제와 장소 검색을 구현했다. 장소·출입 지점 이름과 출처를 보존하지만 경로 검색 요청에는 정의된 WGS84 좌표·mode·출발 시각만 보낸다.
+
+## 공공 3D 모델 기반 예측 연동 초기 기록 (2026-10-27)
+
+아래 좁은 구역·15m 한도·짧은 경로 수치는 초기 검증 기록이다. 현재 앱은 뒤의 **2026-10-29 서울숲 coverage·그늘 구간 연결** 계약을 사용하며 범위·스냅 한도는 서버 coverage에서 읽는다.
+
+- 별도 `POST /api/v1/routes/predictions/search`에 walking과 fastest/shade를 명시해 전달한다. 기존 높이 기반 `/api/v1/routes/search` DTO·Domain·Repository와 분리했다.
+- ModelRoutePredictionResponseDto, PredictedRouteDto, ModeledShadePredictionDto에 전체 응답과 진단값을 반영했다. evaluatedAt과 그래프·장면·시간·라우팅 모델 버전을 보존하며 버전 내용을 해석하지 않는다.
+- modeledShadeRatio와 baselineModeledShadeRatio를 모델 예측값으로만 표시한다. physicalShadeCoverage=null은 미검증이며 예측 0을 실제 그늘 없음으로 표현하지 않는다. 실험적 부분 모델의 한계와 attribution을 표시한다.
+- UI는 일반 도보/모델 그늘 예측, 예측 fastest/shade, 출발 날짜·시각을 선택한다. 좌표·시각·모드·검색 종류 변경 시 이전 요청을 취소하고 결과를 정리한다. 예측 실패 시 일반 도보로 자동 대체하지 않는다.
+- 예측 실험 구역은 경도 127.03562725892677~127.03903614107323, 위도 37.54681064864865~37.54951335135136이며 snapping 한도는 15m다. 일반 도보의 서울숲 pilot과 구분한다.
+- 로컬 서버에 `(127.0389239, 37.5476013)` → `(127.0381515, 37.5475288)`, `2026-10-28T11:00:00+09:00`을 전달해 두 모드 HTTP 200을 확인했다. 앱의 Dio·DTO·Mapper·Repository를 통한 검증도 완료했다.
+- fastest 91.4m/66초/+0초/예측 64.0%, shade 93.5m/67초/+1초/예측 68.6%였다. evaluatedAt(`2026-10-28T02:00:00Z`), dataVersion, predictionDataVersion과 snapping이 일치했다. 수치는 현재 스냅샷 기준이며 앱 로직에 고정하지 않는다.
+- 전체 응답은 `test/fixtures/model_route_prediction_fastest.json`, `test/fixtures/model_route_prediction_shade.json`에 보존한다. 재검증 명령은 `dart run tool/verify_route_predictions.dart --base-url http://localhost:8080 --check-snapshot`이다.
+- SHADE_TIME_UNSUPPORTED, PREDICTION_DATA_UNAVAILABLE, ROUTE_SEARCH_LIMIT_EXCEEDED 및 기존 입력·지역·경로 오류를 사용자 문구로 매핑하고 서버 code/requestId는 그대로 보존한다. 브이월드·건축HUB 키는 Flutter 설정에 추가하지 않는다.
+- 예측 관련 54개를 포함한 전체 Unit/Widget 테스트 231개와 정적 분석·포맷 검사를 통과했다. 실제 서버 통신은 검증했으며 네이티브 지도·카메라의 기기 검증은 별도로 남아 있다.
 
 ## 초기 서버 Phase 1 구성 요구사항 기록
 
@@ -48,7 +63,7 @@ code는 안정적인 문자열 식별자, requestId는 서버 로그와 X-Reques
 
 401/403 등도 앱에서 구분한다. 인증 도입 시 계약을 추가한다. 경로 업무 코드는 서버의 최종 계약으로 확인했으며, 모르는 URL의 404 `NOT_FOUND`와 검색 실패인 404 `ROUTE_NOT_FOUND`를 구분한다. 일반 요청 형식 오류는 400 `INVALID_REQUEST`, 앱용 상태 API의 공간 DB 장애는 503 `SERVICE_UNAVAILABLE`이다. 상태 확인 endpoint는 `GET /api/v1/health`이며 Actuator의 표준 응답과 구분한다.
 
-## 다음 단계: 장소 검색 계약 제안
+## 장소 검색 연결
 
 `GET /api/v1/places/search?query=서울숲`
 
@@ -65,7 +80,15 @@ code는 안정적인 문자열 식별자, requestId는 서버 로그와 X-Reques
 }
 ```
 
-한국 장소 검색 데이터 공급자는 서버 adapter로 분리하고, 공급자의 응답을 이 앱 계약으로 변환한다. 빈 결과는 places: []로 표현한다. 페이지 처리, 공급자 약관·캐시 정책은 선정 후 문서화한다.
+클라이언트가 이 endpoint를 연결했다. 현재 서버의 Geoapify adapter 계약에 따라 최상위 `attributions: [{text, url}]`도 수용하며 URL은 null을 허용한다. 앱은 공급자 출처 링크를 표시한다. 서버에 공급자 키가 없으면 PLACE_SEARCH_NOT_CONFIGURED를 안내하고 지도 선택을 유지한다. 빈 결과는 places: []로 표현한다.
+
+## 2026-10-29 서울숲 coverage·그늘 구간 연결
+
+앱 기본 검색은 모델 예측이며 `GET /api/v1/routes/predictions/coverage`의 bounds·보행망·출입 지점·스냅 한도·버전·connectivity·출처를 연결했다. 출입 지점 또는 지도에서 확정한 좌표와 동일한 출발 시각으로 예측 fastest/shade를 비교한다. 기존 직접 높이 기반 API와 DTO·Domain·결과를 혼합하지 않는다.
+
+PredictedRouteDto/Domain의 shadeSegments에 상태·전체 LineString·from/toDistanceMeters·distanceMeters를 보존한다. 초록/주황 구간은 서버 데이터만 사용하고 중간 꺾임을 유지한다. 시각 변경·모드 전환·삭제·스타일 재로딩 때 구간을 갱신하며 전체 경로를 기존 GPS 안내에 전달한다. 구간이 없는 과거 응답은 중립 선으로 표시한다.
+
+재현 좌표는 `(127.0374,37.5445)` → `(127.0430,37.5480)`, `2026-10-28T11:00:00+09:00`이다. 2026-10-29 실제 서버에서 fastest 800.7m·572초·31.1%, shade 865.6m·619초·54.6%, 각 4구간을 확인했다. coverage의 1,277개 보행선·7개 출입 지점과 응답의 그래프/장면 버전·평가 시각·snapping도 검증했다. 예시 날짜와 검증값은 테스트 전용이며 사용자가 지정한 시각과 서버의 최신 범위를 사용한다. 과거 15m/좁은 영역 기록 대신 현재 coverage의 값을 따른다.
 
 ## 연결한 도보 경로 계약
 
@@ -146,4 +169,4 @@ DTO 테스트는 서버에서 공유한 [합성 fixture HTTP 성공 응답](../t
 4. 위 장소·경로 API 계약의 수용 여부 또는 변경 제안.
 5. 첫 지원 지역과 데이터 확보 계획, 기본 도보 경로를 실제로 계산할 수 있는 단계.
 
-Android Emulator에서는 호스트 개발 서버를 `http://10.0.2.2:8080`으로, iOS Simulator에서는 `http://localhost:8080`으로 지정한다. 실제 기기는 같은 네트워크에서 접근 가능한 개발 서버 주소를 사용한다. Android debug HTTP 허용과 iOS 로컬 네트워크 설정을 추가했다. 실제 서버·기기 통합 검증은 남아 있으며, 2026-10-23 Windows의 Unit/Widget 테스트 177개와 정적 분석·포맷 검사는 통과했다. Flutter native 앱 연결에는 웹 CORS 설정이 필수는 아니며 웹 지원은 별도로 검토한다.
+Android Emulator에서는 호스트 개발 서버를 `http://10.0.2.2:8080`으로, iOS Simulator에서는 `http://localhost:8080`으로 지정한다. 실제 기기는 같은 네트워크에서 접근 가능한 서버 주소를 사용하거나 Android USB의 `adb reverse tcp:8080 tcp:8080`을 사용한다. Android debug HTTP 허용과 iOS 로컬 네트워크 설정을 추가했다. 2026-10-27 삼성 실기기에서 예측 API 호출을 확인했고, 2026-10-28에는 현재 서버의 fastest/shade 평가 시각·그래프·장면·snapping 일치를 다시 검증했다. 신규 3D 화면의 현장 보행·iOS 기기 검증은 별도다. Flutter native 앱 연결에는 웹 CORS 설정이 필수는 아니며 웹 지원은 별도로 검토한다.
