@@ -7,6 +7,7 @@ import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/entities/route_search_result.dart';
 import 'route_search_providers.dart';
+import 'route_search_kind_notifier.dart';
 import 'route_selection_notifier.dart';
 
 part 'route_search_notifier.g.dart';
@@ -20,6 +21,7 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
   FutureOr<RouteSearchResult?> build() {
     // Committed input changes invalidate results; map previews do not.
     ref.watch(routeSelectionProvider.select((state) => state.endpoints));
+    ref.watch(routeSearchKindProvider);
     _requestRevision++;
     ref.onDispose(() {
       _requestRevision++;
@@ -30,7 +32,10 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
   }
 
   Future<void> search({DateTime? departureAt}) async {
-    if (state.isLoading) return;
+    if (state.isLoading ||
+        ref.read(routeSearchKindProvider) != RouteSearchKind.general) {
+      return;
+    }
     final endpoints = ref.read(routeSelectionProvider).endpoints;
     final useCase = ref.read(searchRouteUseCaseProvider);
     final revision = ++_requestRevision;

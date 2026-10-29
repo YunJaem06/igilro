@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/error/failure.dart';
 import '../providers/route_search_notifier.dart';
 import '../providers/route_selection_notifier.dart';
+import '../providers/route_search_kind_notifier.dart';
 
 class RouteSearchControl extends ConsumerWidget {
   const RouteSearchControl({super.key});
@@ -12,7 +13,10 @@ class RouteSearchControl extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(routeSearchProvider);
     final selection = ref.watch(routeSelectionProvider);
-    if (selection.selecting != null) return const SizedBox.shrink();
+    final kind = ref.watch(routeSearchKindProvider);
+    if (selection.selecting != null || kind != RouteSearchKind.general) {
+      return const SizedBox.shrink();
+    }
     final canSearch =
         selection.endpoints.canSearch &&
         selection.selecting == null &&

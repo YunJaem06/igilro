@@ -1,0 +1,120 @@
+{
+  "routes": [
+    {
+      "id": "d50c45bd-7240-4262-bed6-6e792c81d288",
+      "mode": "fastest",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            127.0389239,
+            37.5476013
+          ],
+          [
+            127.0388911,
+            37.5475421
+          ],
+          [
+            127.0388719,
+            37.5475454
+          ],
+          [
+            127.0388528,
+            37.5475436
+          ],
+          [
+            127.0388355,
+            37.5475371
+          ],
+          [
+            127.0388217,
+            37.5475264
+          ],
+          [
+            127.038813,
+            37.5475128
+          ],
+          [
+            127.0388102,
+            37.5474978
+          ],
+          [
+            127.0388138,
+            37.5474828
+          ],
+          [
+            127.0388232,
+            37.5474695
+          ],
+          [
+            127.0388375,
+            37.5474593
+          ],
+          [
+            127.03881,
+            37.5474198
+          ],
+          [
+            127.0387859,
+            37.5473753
+          ],
+          [
+            127.0381515,
+            37.5475288
+          ]
+        ]
+      },
+      "distanceMeters": 91.4,
+      "durationSeconds": 66,
+      "additionalDurationSeconds": 0,
+      "prediction": {
+        "status": "MODEL_BASED_PREDICTION",
+        "modeledShadeRatio": 0.6396398446041602,
+        "baselineModeledShadeRatio": 0.6396398446041602,
+        "physicalShadeCoverage": null
+      }
+    }
+  ],
+  "evaluatedAt": "2026-10-28T02:00:00Z",
+  "dataVersion": "osm-v1-e5e9f0fc01f28ff05acc72e2d91b959f6d86a16eb07235a1b42ad1c40e6fbe35",
+  "predictionDataVersion": "model-scene-v1-701aa099df6dd6460c03c2ec0c498ac57412794f59280248e5b3593d75e2fd43",
+  "modelVersion": "public-3d-prism-dem-v1-step0.5m",
+  "routingModelVersion": "model-prediction-v1-dijkstra-v2-distinct8-snap50-direct5km",
+  "baselineDurationSeconds": 66,
+  "snapping": {
+    "origin": {
+      "coordinate": {
+        "longitude": 127.0389239,
+        "latitude": 37.5476013
+      },
+      "distanceMeters": 0.0
+    },
+    "destination": {
+      "coordinate": {
+        "longitude": 127.0381515,
+        "latitude": 37.5475288
+      },
+      "distanceMeters": 0.0
+    }
+  },
+  "quality": "EXPERIMENTAL_PARTIAL_MODEL",
+  "attribution": "VWorld public 3D model and terrain / OpenStreetMap contributors; source-specific terms apply",
+  "limitations": [
+    "MODEL_HEIGHTS_ARE_NOT_ACTUAL_HEIGHTS",
+    "PARTIAL_PROVIDER_SCENE",
+    "CAPTURE_DATE_UNCONFIRMED",
+    "DEM_BASE_AT_ONE_INTERIOR_POINT",
+    "VERTICAL_REFERENCE_ASSUMED_CONSISTENT",
+    "STRUCTURE_TAG_SCREENING_ONLY",
+    "TREES_CLOUDS_AND_TERRAIN_HORIZON_NOT_MODELED",
+    "FIXED_DEPARTURE_SUN",
+    "MIDPOINT_SAMPLING_NOT_EXACT_SHADOW_BOUNDARY"
+  ],
+  "buildingModelCount": 174,
+  "terrainTileCount": 42,
+  "sampleStepMeters": 0.5,
+  "projectionMaxErrorMeters": 0.011246258273591811,
+  "omittedBuildingModelCount": 2,
+  "sceneBufferMetersApprox": 150.0,
+  "timeModelVersion": "walking-v1-flat-1.4-steps-0.9-haversine-distance"
+}

@@ -1,0 +1,21 @@
+{
+  "areaId": "synthetic-seoul-forest",
+  "name": "서울숲 테스트 보행망",
+  "bounds": [127.0305, 37.5385, 127.0465, 37.5515],
+  "center": {"longitude": 127.0385, "latitude": 37.545},
+  "maximumSnappingDistanceMeters": 50,
+  "walkingNetwork": {"type": "MultiLineString", "coordinates": [
+    [[127.0374,37.5445], [127.039,37.546], [127.043,37.548]],
+    [[127.039,37.546], [127.040,37.544]]
+  ]},
+  "accessPoints": [
+    {"id":"entry-1","name":"테스트 출입구 1","coordinate":{"longitude":127.0374,"latitude":37.5445}},
+    {"id":"entry-2","name":"테스트 출입구 2","coordinate":{"longitude":127.043,"latitude":37.548}}
+  ],
+  "dataVersion": "synthetic-graph",
+  "predictionDataVersion": "synthetic-scene",
+  "quality": "EXPERIMENTAL_PARTIAL_MODEL",
+  "attribution": "Synthetic coverage fixture; not a live walking network",
+  "connectivity": {"nodeCount":4,"edgeCount":3,"weakComponentCount":1,"largestComponentNodeCount":4,
+    "componentPolicy":"LARGEST_CONNECTED_COMPONENT","sourceWeakComponentCount":2,"excludedDisconnectedNodeCount":1}
+}

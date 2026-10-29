@@ -6,6 +6,7 @@ import 'package:igilro/core/error/failure.dart';
 import 'package:igilro/core/error/result.dart';
 import 'package:igilro/features/route_search/domain/entities/route_search_result.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_notifier.dart';
+import 'package:igilro/features/route_search/presentation/providers/route_search_kind_notifier.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_selection_notifier.dart';
 import 'package:igilro/features/route_search/presentation/state/route_selection_state.dart';
@@ -21,6 +22,10 @@ void main() {
       overrides: [routeRepositoryProvider.overrideWithValue(repository)],
     );
     container.listen(routeSelectionProvider, (_, _) {});
+    container.listen(routeSearchKindProvider, (_, _) {});
+    container
+        .read(routeSearchKindProvider.notifier)
+        .select(RouteSearchKind.general);
     selectEndpoints(container);
     container.listen(routeSearchProvider, (_, _) {});
     addTearDown(container.dispose);

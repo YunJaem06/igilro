@@ -1,0 +1,76 @@
+{
+  "routes": [
+    {
+      "id": "e49f8ea9-96d1-4e33-87a7-1c4c9436bcbf",
+      "mode": "shade",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            127.0389239,
+            37.5476013
+          ],
+          [
+            127.0383254,
+            37.5478169
+          ],
+          [
+            127.0381515,
+            37.5475288
+          ]
+        ]
+      },
+      "distanceMeters": 93.5,
+      "durationSeconds": 67,
+      "additionalDurationSeconds": 1,
+      "prediction": {
+        "status": "MODEL_BASED_PREDICTION",
+        "modeledShadeRatio": 0.6861055937402631,
+        "baselineModeledShadeRatio": 0.6396398446041602,
+        "physicalShadeCoverage": null
+      }
+    }
+  ],
+  "evaluatedAt": "2026-10-28T02:00:00Z",
+  "dataVersion": "osm-v1-e5e9f0fc01f28ff05acc72e2d91b959f6d86a16eb07235a1b42ad1c40e6fbe35",
+  "predictionDataVersion": "model-scene-v1-701aa099df6dd6460c03c2ec0c498ac57412794f59280248e5b3593d75e2fd43",
+  "modelVersion": "public-3d-prism-dem-v1-step0.5m",
+  "routingModelVersion": "model-prediction-v1-shade-v1-min-sun-seconds-detour30-pareto100k-sections12k",
+  "baselineDurationSeconds": 66,
+  "snapping": {
+    "origin": {
+      "coordinate": {
+        "longitude": 127.0389239,
+        "latitude": 37.5476013
+      },
+      "distanceMeters": 0.0
+    },
+    "destination": {
+      "coordinate": {
+        "longitude": 127.0381515,
+        "latitude": 37.5475288
+      },
+      "distanceMeters": 0.0
+    }
+  },
+  "quality": "EXPERIMENTAL_PARTIAL_MODEL",
+  "attribution": "VWorld public 3D model and terrain / OpenStreetMap contributors; source-specific terms apply",
+  "limitations": [
+    "MODEL_HEIGHTS_ARE_NOT_ACTUAL_HEIGHTS",
+    "PARTIAL_PROVIDER_SCENE",
+    "CAPTURE_DATE_UNCONFIRMED",
+    "DEM_BASE_AT_ONE_INTERIOR_POINT",
+    "VERTICAL_REFERENCE_ASSUMED_CONSISTENT",
+    "STRUCTURE_TAG_SCREENING_ONLY",
+    "TREES_CLOUDS_AND_TERRAIN_HORIZON_NOT_MODELED",
+    "FIXED_DEPARTURE_SUN",
+    "MIDPOINT_SAMPLING_NOT_EXACT_SHADOW_BOUNDARY"
+  ],
+  "buildingModelCount": 174,
+  "terrainTileCount": 42,
+  "sampleStepMeters": 0.5,
+  "projectionMaxErrorMeters": 0.011246258273591811,
+  "omittedBuildingModelCount": 2,
+  "sceneBufferMetersApprox": 150.0,
+  "timeModelVersion": "walking-v1-flat-1.4-steps-0.9-haversine-distance"
+}
