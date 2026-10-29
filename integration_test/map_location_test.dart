@@ -19,9 +19,12 @@ import 'package:igilro/features/map/presentation/widgets/mapbox_surface.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_selection_notifier.dart';
 import 'package:igilro/features/route_search/domain/entities/route_query.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
+import 'package:igilro/features/route_search/presentation/providers/route_search_kind_notifier.dart';
 import 'package:igilro/features/route_search/presentation/state/route_selection_state.dart';
+import 'package:igilro/features/place_search/presentation/place_search_notifier.dart';
 
 import '../test/helpers/fake_route_repository.dart';
+import '../test/helpers/fake_place_repository.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +43,9 @@ void main() {
       ProviderScope(
         overrides: [
           mapConfiguredProvider.overrideWithValue(true),
+          routeSearchKindProvider.overrideWith(_GeneralSearchKind.new),
           routeRepositoryProvider.overrideWithValue(routeRepository),
+          placeRepositoryProvider.overrideWithValue(FakePlaceRepository()),
           locationRepositoryProvider.overrideWith(
             (ref) => createLocationRepository(),
           ),
@@ -92,8 +97,11 @@ void main() {
     expect(container.read(mapProvider).status, MapLoadStatus.ready);
 
     // Grant access after installation or accept the native permission dialog.
-    await tester.ensureVisible(find.text('현재 위치를 출발지로'));
-    await tester.tap(find.text('현재 위치를 출발지로'));
+    expect((await nativeMap!.getCameraState()).pitch, closeTo(55, 1));
+    await tester.tap(find.byKey(const ValueKey('route-origin')));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('현재 위치에서 출발'));
+    await tester.tap(find.text('현재 위치에서 출발'));
     await _waitUntil(tester, () => !container.read(locationProvider).isLoading);
     final fix = container.read(locationProvider).value;
     expect(
@@ -107,9 +115,11 @@ void main() {
       fix.coordinate,
     );
     await tester.pump(const Duration(seconds: 1));
-    await tester.ensureVisible(find.text('도착지'));
-    await tester.tap(find.text('도착지'));
-    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('route-destination')));
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('지도에서 선택'));
+    await tester.tap(find.text('지도에서 선택'));
+    await tester.pump(const Duration(milliseconds: 400));
     final mapBounds = tester.getRect(map);
     // Flutter synthetic pointers are not physical UIKit gestures. Dispatch
     // through the SDK's native event pipeline, as in Mapbox's own SDK tests.
@@ -197,6 +207,13 @@ void main() {
     await _waitForRoute(tester, nativeMap!, visible: true);
     await _expectRouteInCamera(nativeMap!, path);
 
+    await tester.tap(find.byTooltip('2D로 보기'));
+    await tester.pump(const Duration(seconds: 1));
+    expect((await nativeMap!.getCameraState()).pitch, closeTo(0, 1));
+    await tester.tap(find.byTooltip('3D로 보기'));
+    await tester.pump(const Duration(seconds: 1));
+    expect((await nativeMap!.getCameraState()).pitch, closeTo(55, 1));
+
     // Recreating style managers must restore an unchanged route and its pins.
     final readyBeforeReload = styleReadyCount;
     await nativeMap!.loadStyleURI(MapboxStyles.STANDARD);
@@ -210,6 +227,11 @@ void main() {
     await _waitForRoute(tester, nativeMap!, visible: false);
     expect(tester.takeException(), isNull);
   });
+}
+
+class _GeneralSearchKind extends RouteSearchKindNotifier {
+  @override
+  RouteSearchKind build() => RouteSearchKind.general;
 }
 
 Future<void> _expectRouteInCamera(

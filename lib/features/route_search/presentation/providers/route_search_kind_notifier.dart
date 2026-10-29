@@ -7,7 +7,7 @@ enum RouteSearchKind { general, prediction }
 @riverpod
 class RouteSearchKindNotifier extends _$RouteSearchKindNotifier {
   @override
-  RouteSearchKind build() => RouteSearchKind.general;
+  RouteSearchKind build() => RouteSearchKind.prediction;
 
   void select(RouteSearchKind kind) => state = kind;
 }

@@ -9,7 +9,6 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: IgilroApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('나에게 맞는 길, 이길로'), findsOneWidget);
     expect(find.text('이길로'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -28,7 +27,7 @@ void main() {
 
     await tester.tap(find.text('처음으로'));
     await tester.pumpAndSettle();
-    expect(find.text('나에게 맞는 길, 이길로'), findsOneWidget);
+    expect(find.text('이길로'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -45,7 +44,7 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: IgilroApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('나에게 맞는 길, 이길로'), findsOneWidget);
+    expect(find.text('이길로'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -72,7 +71,7 @@ void main() {
     await tester.ensureVisible(find.text('처음으로'));
     await tester.tap(find.text('처음으로'));
     await tester.pumpAndSettle();
-    expect(find.text('나에게 맞는 길, 이길로'), findsOneWidget);
+    expect(find.text('이길로'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

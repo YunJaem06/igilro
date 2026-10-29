@@ -42,7 +42,7 @@ final class RouteSearchKindNotifierProvider
 }
 
 String _$routeSearchKindNotifierHash() =>
-    r'9366bceb2fa6653564ec40f4e09488a50f083d5a';
+    r'fdf9b850a8e67f895fc76b5a31a44ad2a1e56629';
 
 abstract class _$RouteSearchKindNotifier extends $Notifier<RouteSearchKind> {
   RouteSearchKind build();
