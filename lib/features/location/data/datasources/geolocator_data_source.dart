@@ -22,4 +22,11 @@ final class GeolocatorDataSource {
     LocationSettingsTarget.application => _platform.openAppSettings(),
     LocationSettingsTarget.locationService => _platform.openLocationSettings(),
   };
+
+  Stream<Position> watchPositions() => _platform.getPositionStream(
+    locationSettings: const LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 3,
+    ),
+  );
 }

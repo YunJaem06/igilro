@@ -17,6 +17,8 @@ mixin _$LocationFix {
   GeoCoordinate get coordinate;
   double get accuracyMeters;
   DateTime get capturedAt;
+  double? get headingDegrees;
+  double? get speedMetersPerSecond;
 
   /// Create a copy of LocationFix
   /// with the given fields replaced by the non-null parameter values.
@@ -36,7 +38,14 @@ mixin _$LocationFix {
             (identical(other.accuracyMeters, _this.accuracyMeters) ||
                 other.accuracyMeters == _this.accuracyMeters) &&
             (identical(other.capturedAt, _this.capturedAt) ||
-                other.capturedAt == _this.capturedAt));
+                other.capturedAt == _this.capturedAt) &&
+            (identical(other.headingDegrees, _this.headingDegrees) ||
+                other.headingDegrees == _this.headingDegrees) &&
+            (identical(
+                  other.speedMetersPerSecond,
+                  _this.speedMetersPerSecond,
+                ) ||
+                other.speedMetersPerSecond == _this.speedMetersPerSecond));
   }
 
   @override
@@ -47,13 +56,15 @@ mixin _$LocationFix {
       _this.coordinate,
       _this.accuracyMeters,
       _this.capturedAt,
+      _this.headingDegrees,
+      _this.speedMetersPerSecond,
     );
   }
 
   @override
   String toString() {
     final _this = this as LocationFix;
-    return 'LocationFix(coordinate: ${_this.coordinate}, accuracyMeters: ${_this.accuracyMeters}, capturedAt: ${_this.capturedAt})';
+    return 'LocationFix(coordinate: ${_this.coordinate}, accuracyMeters: ${_this.accuracyMeters}, capturedAt: ${_this.capturedAt}, headingDegrees: ${_this.headingDegrees}, speedMetersPerSecond: ${_this.speedMetersPerSecond})';
   }
 }
 
@@ -68,6 +79,8 @@ abstract mixin class $LocationFixCopyWith<$Res> {
     GeoCoordinate coordinate,
     double accuracyMeters,
     DateTime capturedAt,
+    double? headingDegrees,
+    double? speedMetersPerSecond,
   });
 
   $GeoCoordinateCopyWith<$Res> get coordinate;
@@ -88,6 +101,8 @@ class _$LocationFixCopyWithImpl<$Res> implements $LocationFixCopyWith<$Res> {
     Object? coordinate = null,
     Object? accuracyMeters = null,
     Object? capturedAt = null,
+    Object? headingDegrees = freezed,
+    Object? speedMetersPerSecond = freezed,
   }) {
     return _then(
       LocationFix(
@@ -103,6 +118,14 @@ class _$LocationFixCopyWithImpl<$Res> implements $LocationFixCopyWith<$Res> {
             ? _self.capturedAt
             : capturedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        headingDegrees: freezed == headingDegrees
+            ? _self.headingDegrees
+            : headingDegrees // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        speedMetersPerSecond: freezed == speedMetersPerSecond
+            ? _self.speedMetersPerSecond
+            : speedMetersPerSecond // ignore: cast_nullable_to_non_nullable
+                  as double?,
       ),
     );
   }
@@ -215,6 +238,8 @@ extension LocationFixPatterns on LocationFix {
       GeoCoordinate coordinate,
       double accuracyMeters,
       DateTime capturedAt,
+      double? headingDegrees,
+      double? speedMetersPerSecond,
     )?
     $default, {
     required TResult orElse(),
@@ -226,6 +251,8 @@ extension LocationFixPatterns on LocationFix {
           _that.coordinate,
           _that.accuracyMeters,
           _that.capturedAt,
+          _that.headingDegrees,
+          _that.speedMetersPerSecond,
         );
       case _:
         return orElse();
@@ -251,6 +278,8 @@ extension LocationFixPatterns on LocationFix {
       GeoCoordinate coordinate,
       double accuracyMeters,
       DateTime capturedAt,
+      double? headingDegrees,
+      double? speedMetersPerSecond,
     )
     $default,
   ) {
@@ -261,6 +290,8 @@ extension LocationFixPatterns on LocationFix {
           _that.coordinate,
           _that.accuracyMeters,
           _that.capturedAt,
+          _that.headingDegrees,
+          _that.speedMetersPerSecond,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -285,6 +316,8 @@ extension LocationFixPatterns on LocationFix {
       GeoCoordinate coordinate,
       double accuracyMeters,
       DateTime capturedAt,
+      double? headingDegrees,
+      double? speedMetersPerSecond,
     )?
     $default,
   ) {
@@ -295,6 +328,8 @@ extension LocationFixPatterns on LocationFix {
           _that.coordinate,
           _that.accuracyMeters,
           _that.capturedAt,
+          _that.headingDegrees,
+          _that.speedMetersPerSecond,
         );
       case _:
         return null;
@@ -309,6 +344,8 @@ class _LocationFix implements LocationFix {
     required this.coordinate,
     required this.accuracyMeters,
     required this.capturedAt,
+    this.headingDegrees,
+    this.speedMetersPerSecond,
   });
 
   @override
@@ -317,6 +354,10 @@ class _LocationFix implements LocationFix {
   final double accuracyMeters;
   @override
   final DateTime capturedAt;
+  @override
+  final double? headingDegrees;
+  @override
+  final double? speedMetersPerSecond;
 
   /// Create a copy of LocationFix
   /// with the given fields replaced by the non-null parameter values.
@@ -336,17 +377,28 @@ class _LocationFix implements LocationFix {
             (identical(other.accuracyMeters, accuracyMeters) ||
                 other.accuracyMeters == accuracyMeters) &&
             (identical(other.capturedAt, capturedAt) ||
-                other.capturedAt == capturedAt));
+                other.capturedAt == capturedAt) &&
+            (identical(other.headingDegrees, headingDegrees) ||
+                other.headingDegrees == headingDegrees) &&
+            (identical(other.speedMetersPerSecond, speedMetersPerSecond) ||
+                other.speedMetersPerSecond == speedMetersPerSecond));
   }
 
   @override
   int get hashCode {
-    return Object.hash(runtimeType, coordinate, accuracyMeters, capturedAt);
+    return Object.hash(
+      runtimeType,
+      coordinate,
+      accuracyMeters,
+      capturedAt,
+      headingDegrees,
+      speedMetersPerSecond,
+    );
   }
 
   @override
   String toString() {
-    return 'LocationFix(coordinate: $coordinate, accuracyMeters: $accuracyMeters, capturedAt: $capturedAt)';
+    return 'LocationFix(coordinate: $coordinate, accuracyMeters: $accuracyMeters, capturedAt: $capturedAt, headingDegrees: $headingDegrees, speedMetersPerSecond: $speedMetersPerSecond)';
   }
 }
 
@@ -363,6 +415,8 @@ abstract mixin class _$LocationFixCopyWith<$Res>
     GeoCoordinate coordinate,
     double accuracyMeters,
     DateTime capturedAt,
+    double? headingDegrees,
+    double? speedMetersPerSecond,
   });
 
   @override
@@ -384,6 +438,8 @@ class __$LocationFixCopyWithImpl<$Res> implements _$LocationFixCopyWith<$Res> {
     Object? coordinate = null,
     Object? accuracyMeters = null,
     Object? capturedAt = null,
+    Object? headingDegrees = freezed,
+    Object? speedMetersPerSecond = freezed,
   }) {
     return _then(
       _LocationFix(
@@ -399,6 +455,14 @@ class __$LocationFixCopyWithImpl<$Res> implements _$LocationFixCopyWith<$Res> {
             ? _self.capturedAt
             : capturedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        headingDegrees: freezed == headingDegrees
+            ? _self.headingDegrees
+            : headingDegrees // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        speedMetersPerSecond: freezed == speedMetersPerSecond
+            ? _self.speedMetersPerSecond
+            : speedMetersPerSecond // ignore: cast_nullable_to_non_nullable
+                  as double?,
       ),
     );
   }

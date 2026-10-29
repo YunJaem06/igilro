@@ -11,6 +11,11 @@ final sampleLocation = LocationFix(
 );
 
 class FakeLocationRepository implements LocationRepository {
+  Stream<Result<LocationFix>>? updates;
+
+  @override
+  Stream<Result<LocationFix>> watchLocation() =>
+      updates ?? const Stream.empty();
   Result<bool> service = const Result.success(true);
   Result<LocationAccess> permission = const Result.success(
     LocationAccess.granted,

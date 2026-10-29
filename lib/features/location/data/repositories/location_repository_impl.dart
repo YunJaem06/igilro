@@ -33,6 +33,27 @@ final class LocationRepositoryImpl implements LocationRepository {
       _guard(() async => _mapper.toFix(await _source.getCurrentPosition()));
 
   @override
+  Stream<Result<LocationFix>> watchLocation() async* {
+    try {
+      await for (final position in _source.watchPositions()) {
+        yield Result.success(_mapper.toFix(position));
+      }
+    } catch (error) {
+      yield Result.failure(switch (error) {
+        PermissionDeniedException() => const Failure(
+          type: FailureType.permissionDenied,
+        ),
+        LocationServiceDisabledException() => const Failure(
+          type: FailureType.serviceDisabled,
+        ),
+        FormatException() => const Failure(type: FailureType.invalidData),
+        TimeoutException() => const Failure(type: FailureType.timeout),
+        _ => const Failure(type: FailureType.unexpected),
+      });
+    }
+  }
+
+  @override
   Future<Result<bool>> openSettings(LocationSettingsTarget target) =>
       _guard(() => _source.openSettings(target));
 

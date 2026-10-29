@@ -10,5 +10,7 @@ abstract class LocationFix with _$LocationFix {
     required GeoCoordinate coordinate,
     required double accuracyMeters,
     required DateTime capturedAt,
+    double? headingDegrees,
+    double? speedMetersPerSecond,
   }) = _LocationFix;
 }

@@ -34,6 +34,15 @@ final class LocationMapper {
       ),
       accuracyMeters: position.accuracy,
       capturedAt: position.timestamp,
+      headingDegrees:
+          position.heading.isFinite &&
+              position.heading >= 0 &&
+              position.heading < 360
+          ? position.heading
+          : null,
+      speedMetersPerSecond: position.speed.isFinite && position.speed >= 0
+          ? position.speed
+          : null,
     );
   }
 }
