@@ -19,6 +19,7 @@ dependencies:
   riverpod_annotation: ^4.0.7
   mapbox_maps_flutter: ^3.0.0
   geolocator: ^14.1.1
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

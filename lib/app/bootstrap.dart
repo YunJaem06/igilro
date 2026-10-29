@@ -12,6 +12,8 @@ import 'di/app_providers.dart';
 import 'di/location_dependencies.dart';
 import 'di/route_dependencies.dart';
 import 'di/route_prediction_dependencies.dart';
+import '../features/place_search/data/place_repository_impl.dart';
+import '../features/place_search/presentation/place_search_notifier.dart';
 
 void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +33,11 @@ void bootstrap() {
         locationRepositoryProvider.overrideWith(
           (ref) => createLocationRepository(),
         ),
+        placeRepositoryProvider.overrideWith((ref) {
+          final repository = PlaceRepositoryImpl(ref.watch(dioClientProvider));
+          ref.onDispose(repository.cancel);
+          return repository;
+        }),
         routeRepositoryProvider.overrideWith((ref) {
           final repository = createRouteRepository(
             ref.watch(dioClientProvider),

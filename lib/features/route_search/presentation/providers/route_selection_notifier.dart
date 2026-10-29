@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/geo/geo_coordinate.dart';
+import '../../domain/entities/route_endpoints.dart';
 import '../../domain/entities/route_point.dart';
 import '../state/route_selection_state.dart';
 
@@ -10,6 +11,18 @@ part 'route_selection_notifier.g.dart';
 class RouteSelectionNotifier extends _$RouteSelectionNotifier {
   @override
   RouteSelectionState build() => const RouteSelectionState();
+
+  void setEndpoints(RouteEndpoints endpoints) =>
+      state = RouteSelectionState(endpoints: endpoints);
+
+  void setPoint(RouteEndpoint endpoint, RoutePoint point) =>
+      state = state.copyWith(
+        endpoints: endpoint == RouteEndpoint.origin
+            ? state.endpoints.copyWith(origin: point)
+            : state.endpoints.copyWith(destination: point),
+        selecting: null,
+        candidate: null,
+      );
 
   void beginSelection(RouteEndpoint endpoint) => state = state.copyWith(
     selecting: endpoint,
