@@ -10,6 +10,7 @@ import '../../../../core/geo/geo_coordinate.dart';
 import '../adapters/mapbox_controller.dart';
 import '../state/map_marker.dart';
 import '../state/map_state.dart';
+import '../state/map_overlays.dart';
 
 class MapboxSurface extends StatefulWidget {
   const MapboxSurface({
@@ -17,6 +18,10 @@ class MapboxSurface extends StatefulWidget {
     required this.state,
     required this.markers,
     this.routePath = const [],
+    this.alternativeRoutePath = const [],
+    this.routeSegments = const [],
+    this.coverage,
+    this.onAccessPointTapped,
     this.onCoordinateTapped,
     this.onMapCreated,
     required this.onReady,
@@ -26,6 +31,10 @@ class MapboxSurface extends StatefulWidget {
   final MapState state;
   final List<MapMarker> markers;
   final List<GeoCoordinate> routePath;
+  final List<GeoCoordinate> alternativeRoutePath;
+  final List<MapRouteSegment> routeSegments;
+  final MapCoverage? coverage;
+  final ValueChanged<MapAccessPoint>? onAccessPointTapped;
   final ValueChanged<GeoCoordinate>? onCoordinateTapped;
 
   /// Optional observer for device tests; the surface still owns SDK lifetime.
@@ -52,8 +61,8 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
     _initialViewport = CameraViewportState(
       center: MapboxController.pointFor(widget.state.center),
       zoom: widget.state.zoom,
-      bearing: 0,
-      pitch: 0,
+      bearing: widget.state.bearing,
+      pitch: widget.state.is3D ? 55 : 0,
     );
     _loadingTimeout = Timer(const Duration(seconds: 30), () {
       if (mounted && !_styleReady) widget.onFailure();
@@ -67,8 +76,16 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
         oldWidget.state.cameraRevision != widget.state.cameraRevision;
     if (_styleReady &&
         (moveCamera ||
+            oldWidget.state.currentLocation != widget.state.currentLocation ||
+            oldWidget.state.lightingAt != widget.state.lightingAt ||
+            oldWidget.coverage != widget.coverage ||
+            !listEquals(oldWidget.routeSegments, widget.routeSegments) ||
             !listEquals(oldWidget.markers, widget.markers) ||
-            !listEquals(oldWidget.routePath, widget.routePath))) {
+            !listEquals(oldWidget.routePath, widget.routePath) ||
+            !listEquals(
+              oldWidget.alternativeRoutePath,
+              widget.alternativeRoutePath,
+            ))) {
       _scheduleApply(moveCamera: moveCamera);
     }
   }
@@ -95,6 +112,9 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
         widget.state,
         widget.markers,
         routePath: widget.routePath,
+        alternativeRoutePath: widget.alternativeRoutePath,
+        routeSegments: widget.routeSegments,
+        coverage: widget.coverage,
         moveCamera: moveCamera,
         viewportSize: _viewportSize,
       );
@@ -115,6 +135,9 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
         widget.state,
         widget.markers,
         routePath: widget.routePath,
+        alternativeRoutePath: widget.alternativeRoutePath,
+        routeSegments: widget.routeSegments,
+        coverage: widget.coverage,
         moveCamera: true,
         viewportSize: _viewportSize,
       );
@@ -138,7 +161,12 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
       return MapWidget(
         viewport: _initialViewport,
         onMapCreated: (map) {
-          _controller = MapboxController(map);
+          _controller = MapboxController(
+            map,
+            onAccessPointTapped: (point) {
+              if (mounted) widget.onAccessPointTapped?.call(point);
+            },
+          );
           map.addInteraction(
             TapInteraction.onMap(_onMapTap),
             interactionID: 'igilro.coordinate_selection',

@@ -16,6 +16,10 @@ T _$identity<T>(T value) => value;
 mixin _$MapState {
   GeoCoordinate get center;
   double get zoom;
+  bool get is3D;
+  bool get followLocation;
+  double get bearing;
+  DateTime? get lightingAt;
   GeoCoordinate? get currentLocation;
   List<GeoCoordinate> get framedCoordinates;
   MapLoadStatus get status;
@@ -38,6 +42,13 @@ mixin _$MapState {
             (identical(other.center, _this.center) ||
                 other.center == _this.center) &&
             (identical(other.zoom, _this.zoom) || other.zoom == _this.zoom) &&
+            (identical(other.is3D, _this.is3D) || other.is3D == _this.is3D) &&
+            (identical(other.followLocation, _this.followLocation) ||
+                other.followLocation == _this.followLocation) &&
+            (identical(other.bearing, _this.bearing) ||
+                other.bearing == _this.bearing) &&
+            (identical(other.lightingAt, _this.lightingAt) ||
+                other.lightingAt == _this.lightingAt) &&
             (identical(other.currentLocation, _this.currentLocation) ||
                 other.currentLocation == _this.currentLocation) &&
             const DeepCollectionEquality().equals(
@@ -59,6 +70,10 @@ mixin _$MapState {
       runtimeType,
       _this.center,
       _this.zoom,
+      _this.is3D,
+      _this.followLocation,
+      _this.bearing,
+      _this.lightingAt,
       _this.currentLocation,
       const DeepCollectionEquality().hash(_this.framedCoordinates),
       _this.status,
@@ -70,7 +85,7 @@ mixin _$MapState {
   @override
   String toString() {
     final _this = this as MapState;
-    return 'MapState(center: ${_this.center}, zoom: ${_this.zoom}, currentLocation: ${_this.currentLocation}, framedCoordinates: ${_this.framedCoordinates}, status: ${_this.status}, cameraRevision: ${_this.cameraRevision}, session: ${_this.session})';
+    return 'MapState(center: ${_this.center}, zoom: ${_this.zoom}, is3D: ${_this.is3D}, followLocation: ${_this.followLocation}, bearing: ${_this.bearing}, lightingAt: ${_this.lightingAt}, currentLocation: ${_this.currentLocation}, framedCoordinates: ${_this.framedCoordinates}, status: ${_this.status}, cameraRevision: ${_this.cameraRevision}, session: ${_this.session})';
   }
 }
 
@@ -82,6 +97,10 @@ abstract mixin class $MapStateCopyWith<$Res> {
   $Res call({
     GeoCoordinate center,
     double zoom,
+    bool is3D,
+    bool followLocation,
+    double bearing,
+    DateTime? lightingAt,
     GeoCoordinate? currentLocation,
     List<GeoCoordinate> framedCoordinates,
     MapLoadStatus status,
@@ -107,6 +126,10 @@ class _$MapStateCopyWithImpl<$Res> implements $MapStateCopyWith<$Res> {
   $Res call({
     Object? center = null,
     Object? zoom = null,
+    Object? is3D = null,
+    Object? followLocation = null,
+    Object? bearing = null,
+    Object? lightingAt = freezed,
     Object? currentLocation = freezed,
     Object? framedCoordinates = null,
     Object? status = null,
@@ -123,6 +146,22 @@ class _$MapStateCopyWithImpl<$Res> implements $MapStateCopyWith<$Res> {
             ? _self.zoom
             : zoom // ignore: cast_nullable_to_non_nullable
                   as double,
+        is3D: null == is3D
+            ? _self.is3D
+            : is3D // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        followLocation: null == followLocation
+            ? _self.followLocation
+            : followLocation // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        bearing: null == bearing
+            ? _self.bearing
+            : bearing // ignore: cast_nullable_to_non_nullable
+                  as double,
+        lightingAt: freezed == lightingAt
+            ? _self.lightingAt
+            : lightingAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
         currentLocation: freezed == currentLocation
             ? _self.currentLocation
             : currentLocation // ignore: cast_nullable_to_non_nullable
@@ -268,6 +307,10 @@ extension MapStatePatterns on MapState {
     TResult Function(
       GeoCoordinate center,
       double zoom,
+      bool is3D,
+      bool followLocation,
+      double bearing,
+      DateTime? lightingAt,
       GeoCoordinate? currentLocation,
       List<GeoCoordinate> framedCoordinates,
       MapLoadStatus status,
@@ -283,6 +326,10 @@ extension MapStatePatterns on MapState {
         return $default(
           _that.center,
           _that.zoom,
+          _that.is3D,
+          _that.followLocation,
+          _that.bearing,
+          _that.lightingAt,
           _that.currentLocation,
           _that.framedCoordinates,
           _that.status,
@@ -312,6 +359,10 @@ extension MapStatePatterns on MapState {
     TResult Function(
       GeoCoordinate center,
       double zoom,
+      bool is3D,
+      bool followLocation,
+      double bearing,
+      DateTime? lightingAt,
       GeoCoordinate? currentLocation,
       List<GeoCoordinate> framedCoordinates,
       MapLoadStatus status,
@@ -326,6 +377,10 @@ extension MapStatePatterns on MapState {
         return $default(
           _that.center,
           _that.zoom,
+          _that.is3D,
+          _that.followLocation,
+          _that.bearing,
+          _that.lightingAt,
           _that.currentLocation,
           _that.framedCoordinates,
           _that.status,
@@ -354,6 +409,10 @@ extension MapStatePatterns on MapState {
     TResult? Function(
       GeoCoordinate center,
       double zoom,
+      bool is3D,
+      bool followLocation,
+      double bearing,
+      DateTime? lightingAt,
       GeoCoordinate? currentLocation,
       List<GeoCoordinate> framedCoordinates,
       MapLoadStatus status,
@@ -368,6 +427,10 @@ extension MapStatePatterns on MapState {
         return $default(
           _that.center,
           _that.zoom,
+          _that.is3D,
+          _that.followLocation,
+          _that.bearing,
+          _that.lightingAt,
           _that.currentLocation,
           _that.framedCoordinates,
           _that.status,
@@ -384,8 +447,12 @@ extension MapStatePatterns on MapState {
 
 class _MapState implements MapState {
   const _MapState({
-    this.center = const GeoCoordinate(latitude: 37.5665, longitude: 126.9780),
-    this.zoom = 14,
+    this.center = const GeoCoordinate(latitude: 37.5476, longitude: 127.0385),
+    this.zoom = 16,
+    this.is3D = true,
+    this.followLocation = false,
+    this.bearing = 0,
+    this.lightingAt,
     this.currentLocation,
     List<GeoCoordinate> framedCoordinates = const [],
     this.status = MapLoadStatus.loading,
@@ -399,6 +466,17 @@ class _MapState implements MapState {
   @override
   @JsonKey()
   final double zoom;
+  @override
+  @JsonKey()
+  final bool is3D;
+  @override
+  @JsonKey()
+  final bool followLocation;
+  @override
+  @JsonKey()
+  final double bearing;
+  @override
+  final DateTime? lightingAt;
   @override
   final GeoCoordinate? currentLocation;
   final List<GeoCoordinate> _framedCoordinates;
@@ -436,6 +514,12 @@ class _MapState implements MapState {
             other is _MapState &&
             (identical(other.center, center) || other.center == center) &&
             (identical(other.zoom, zoom) || other.zoom == zoom) &&
+            (identical(other.is3D, is3D) || other.is3D == is3D) &&
+            (identical(other.followLocation, followLocation) ||
+                other.followLocation == followLocation) &&
+            (identical(other.bearing, bearing) || other.bearing == bearing) &&
+            (identical(other.lightingAt, lightingAt) ||
+                other.lightingAt == lightingAt) &&
             (identical(other.currentLocation, currentLocation) ||
                 other.currentLocation == currentLocation) &&
             const DeepCollectionEquality().equals(
@@ -454,6 +538,10 @@ class _MapState implements MapState {
       runtimeType,
       center,
       zoom,
+      is3D,
+      followLocation,
+      bearing,
+      lightingAt,
       currentLocation,
       const DeepCollectionEquality().hash(_framedCoordinates),
       status,
@@ -464,7 +552,7 @@ class _MapState implements MapState {
 
   @override
   String toString() {
-    return 'MapState(center: $center, zoom: $zoom, currentLocation: $currentLocation, framedCoordinates: $framedCoordinates, status: $status, cameraRevision: $cameraRevision, session: $session)';
+    return 'MapState(center: $center, zoom: $zoom, is3D: $is3D, followLocation: $followLocation, bearing: $bearing, lightingAt: $lightingAt, currentLocation: $currentLocation, framedCoordinates: $framedCoordinates, status: $status, cameraRevision: $cameraRevision, session: $session)';
   }
 }
 
@@ -478,6 +566,10 @@ abstract mixin class _$MapStateCopyWith<$Res>
   $Res call({
     GeoCoordinate center,
     double zoom,
+    bool is3D,
+    bool followLocation,
+    double bearing,
+    DateTime? lightingAt,
     GeoCoordinate? currentLocation,
     List<GeoCoordinate> framedCoordinates,
     MapLoadStatus status,
@@ -505,6 +597,10 @@ class __$MapStateCopyWithImpl<$Res> implements _$MapStateCopyWith<$Res> {
   $Res call({
     Object? center = null,
     Object? zoom = null,
+    Object? is3D = null,
+    Object? followLocation = null,
+    Object? bearing = null,
+    Object? lightingAt = freezed,
     Object? currentLocation = freezed,
     Object? framedCoordinates = null,
     Object? status = null,
@@ -521,6 +617,22 @@ class __$MapStateCopyWithImpl<$Res> implements _$MapStateCopyWith<$Res> {
             ? _self.zoom
             : zoom // ignore: cast_nullable_to_non_nullable
                   as double,
+        is3D: null == is3D
+            ? _self.is3D
+            : is3D // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        followLocation: null == followLocation
+            ? _self.followLocation
+            : followLocation // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        bearing: null == bearing
+            ? _self.bearing
+            : bearing // ignore: cast_nullable_to_non_nullable
+                  as double,
+        lightingAt: freezed == lightingAt
+            ? _self.lightingAt
+            : lightingAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
         currentLocation: freezed == currentLocation
             ? _self.currentLocation
             : currentLocation // ignore: cast_nullable_to_non_nullable

@@ -5,6 +5,7 @@ import '../../../../core/geo/geo_coordinate.dart';
 import '../providers/map_notifier.dart';
 import '../state/map_marker.dart';
 import '../state/map_state.dart';
+import '../state/map_overlays.dart';
 import 'mapbox_surface.dart';
 
 typedef MapSurfaceBuilder = Widget Function(
@@ -22,6 +23,10 @@ class MapCanvas extends ConsumerWidget {
     this.surfaceBuilder,
     this.markers = const [],
     this.routePath = const [],
+    this.alternativeRoutePath = const [],
+    this.routeSegments = const [],
+    this.coverage,
+    this.onAccessPointTapped,
     this.onCoordinateTapped,
   });
 
@@ -29,6 +34,10 @@ class MapCanvas extends ConsumerWidget {
   final MapSurfaceBuilder? surfaceBuilder;
   final List<MapMarker> markers;
   final List<GeoCoordinate> routePath;
+  final List<GeoCoordinate> alternativeRoutePath;
+  final List<MapRouteSegment> routeSegments;
+  final MapCoverage? coverage;
+  final ValueChanged<MapAccessPoint>? onAccessPointTapped;
   final ValueChanged<GeoCoordinate>? onCoordinateTapped;
 
   @override
@@ -52,6 +61,10 @@ class MapCanvas extends ConsumerWidget {
           state: state,
           markers: markers,
           routePath: routePath,
+          alternativeRoutePath: alternativeRoutePath,
+          routeSegments: routeSegments,
+          coverage: coverage,
+          onAccessPointTapped: onAccessPointTapped,
           onCoordinateTapped: state.status == MapLoadStatus.ready
               ? onCoordinateTapped
               : null,

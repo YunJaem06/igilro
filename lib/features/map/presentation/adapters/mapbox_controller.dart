@@ -4,42 +4,150 @@ import 'package:flutter/foundation.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 
 import '../../../../core/geo/geo_coordinate.dart';
+import '../../../../core/geo/solar_position.dart';
 import '../state/map_marker.dart';
 import '../state/map_state.dart';
+import '../state/map_overlays.dart';
+import 'coverage_geojson.dart';
 import 'map_pin_image.dart';
 
 /// Owned by one Mapbox surface. SDK objects never enter Riverpod state.
 final class MapboxController {
-  MapboxController(this._map);
+  MapboxController(this._map, {this.onAccessPointTapped});
+
+  final ValueChanged<MapAccessPoint>? onAccessPointTapped;
 
   static const routeLayerId = 'igilro.route';
+  static const segmentsLayerId = 'igilro.route-segments';
+  static const coverageSourceId = 'igilro.coverage';
+  static const networkLayerId = 'igilro.walking-network';
+  static const boundsLayerId = 'igilro.coverage-bounds';
 
   final MapboxMap _map;
   PolylineAnnotationManager? _routes;
+  PolylineAnnotationManager? _alternatives;
+  PolylineAnnotationManager? _segments;
+  PointAnnotationManager? _accessPoints;
+  Cancelable? _accessTaps;
+  final _accessById = <String, MapAccessPoint>{};
+  GeoJsonSource? _coverageSource;
+  MapCoverage? _lastCoverage;
+  CircleAnnotationManager? _routeEnds;
   CircleAnnotationManager? _locations;
   PointAnnotationManager? _pins;
   final _pinImages = <MapMarkerRole, Uint8List>{};
   GeoCoordinate? _lastLocation;
   List<MapMarker> _lastMarkers = const [];
-  List<GeoCoordinate> _lastRoutePath = const [];
+  MapRoutePaint? _lastRoutePaint;
+  List<GeoCoordinate> _lastAlternativePath = const [];
   bool _disposed = false;
+  String? _lastLightKey;
   Future<void> _pending = Future.value();
 
   Future<void> initialize() => _enqueue(() async {
     // A style reload needs fresh managers and rendering caches.
-    for (final id in [_routes?.id, _locations?.id, _pins?.id].nonNulls) {
+    for (final id in [
+      _routes?.id,
+      _alternatives?.id,
+      _segments?.id,
+      _accessPoints?.id,
+      _routeEnds?.id,
+      _locations?.id,
+      _pins?.id,
+    ].nonNulls) {
       if (_disposed) return;
       await _map.annotations.removeAnnotationManagerById(id);
     }
     _lastLocation = null;
+    _accessTaps?.cancel();
+    _accessById.clear();
+    _lastLightKey = null;
+    await _map.setStyleImportConfigProperty('basemap', 'show3dObjects', true);
     _lastMarkers = const [];
-    _lastRoutePath = const [];
-    // Create the route below location and endpoint annotations.
+    _lastRoutePaint = null;
+    _lastCoverage = null;
+    _lastAlternativePath = const [];
+    for (final id in [networkLayerId, boundsLayerId, 'igilro.coverage-fill']) {
+      if (await _map.styleLayerExists(id)) await _map.removeStyleLayer(id);
+    }
+    if (await _map.styleSourceExists(coverageSourceId)) {
+      await _map.removeStyleSource(coverageSourceId);
+    }
+    _coverageSource = GeoJsonSource(
+      id: coverageSourceId,
+      data: coverageGeoJson(null),
+    );
+    await _map.addSource(_coverageSource!);
+    await _map.addLayer(
+      FillLayer(
+        id: 'igilro.coverage-fill',
+        sourceId: coverageSourceId,
+        slot: 'middle',
+        filter: [
+          '==',
+          ['get', 'kind'],
+          'bounds',
+        ],
+        fillColor: 0xFF23785C,
+        fillOpacity: 0.04,
+      ),
+    );
+    await _map.addLayer(
+      LineLayer(
+        id: boundsLayerId,
+        sourceId: coverageSourceId,
+        slot: 'middle',
+        filter: [
+          '==',
+          ['get', 'kind'],
+          'bounds',
+        ],
+        lineColor: 0xFF527D6D,
+        lineWidth: 2,
+        lineDasharray: [3, 2],
+      ),
+    );
+    await _map.addLayer(
+      LineLayer(
+        id: networkLayerId,
+        sourceId: coverageSourceId,
+        slot: 'middle',
+        filter: [
+          '==',
+          ['get', 'kind'],
+          'network',
+        ],
+        lineColor: 0xFF6A958A,
+        lineOpacity: 0.65,
+        lineWidth: 2,
+      ),
+    );
+    // Network and access points are below the alternative/selected routes;
+    // location and selected endpoint pins are created last.
+    _accessPoints = await _map.annotations.createPointAnnotationManager(
+      id: 'igilro.access-points',
+    );
+    _accessTaps = _accessPoints!.tapEvents(
+      onTap: (annotation) {
+        final point = _accessById[annotation.id];
+        if (!_disposed && point != null) onAccessPointTapped?.call(point);
+      },
+    );
+    _alternatives = await _map.annotations.createPolylineAnnotationManager(
+      id: 'igilro.alternative',
+    );
     _routes = await _map.annotations.createPolylineAnnotationManager(
       id: routeLayerId,
     );
+    _segments = await _map.annotations.createPolylineAnnotationManager(
+      id: segmentsLayerId,
+    );
     if (_disposed) return;
     await _routes!.setLineCap(LineCap.ROUND);
+    if (_disposed) return;
+    _routeEnds = await _map.annotations.createCircleAnnotationManager(
+      id: 'igilro.route-endpoints',
+    );
     if (_disposed) return;
     _locations = await _map.annotations.createCircleAnnotationManager();
     if (_disposed) return;
@@ -62,44 +170,96 @@ final class MapboxController {
     MapState state,
     List<MapMarker> markers, {
     List<GeoCoordinate> routePath = const [],
+    List<GeoCoordinate> alternativeRoutePath = const [],
+    List<MapRouteSegment> routeSegments = const [],
+    MapCoverage? coverage,
     required bool moveCamera,
     required ui.Size viewportSize,
   }) => _enqueue(() async {
+    final instant = state.lightingAt ?? DateTime.now().toUtc();
+    final key =
+        '${instant.millisecondsSinceEpoch ~/ 60000}:'
+        '${state.center.latitude.toStringAsFixed(2)}:${state.center.longitude.toStringAsFixed(2)}';
+    if (key != _lastLightKey) {
+      final sun = SolarPosition.at(state.center, instant);
+      await _map.setLights(
+        AmbientLight(
+          id: 'igilro.ambient',
+          intensity: sun.altitude > 0 ? 0.55 : 0.3,
+          color: 0xFFFFFFFF,
+        ),
+        DirectionalLight(
+          id: 'igilro.sun',
+          castShadows: sun.altitude > 0,
+          direction: [sun.azimuth, (90 - sun.altitude).clamp(0.0, 90.0)],
+          intensity: sun.altitude > 0 ? 0.8 : 0,
+          shadowIntensity: 0.8,
+          color: 0xFFFFF5E6,
+        ),
+      );
+      _lastLightKey = key;
+    }
+    await _showCoverage(coverage);
+    if (_disposed) return;
     if (moveCamera) {
       final camera = state.framedCoordinates.isEmpty
           ? CameraOptions(
               center: pointFor(state.center),
               zoom: state.zoom,
-              bearing: 0,
-              pitch: 0,
+              bearing: state.followLocation ? state.bearing : 0,
+              pitch: state.is3D ? 55 : 0,
             )
           : await _map.cameraForCoordinatesPadding(
               state.framedCoordinates.map(pointFor).toList(growable: false),
-              CameraOptions(bearing: 0, pitch: 0),
+              CameraOptions(bearing: 0, pitch: state.is3D ? 55 : 0),
               MbxEdgeInsets(
                 top: viewportSize.height * 0.20,
                 left: viewportSize.width * 0.12,
                 bottom: viewportSize.height * 0.12,
                 right: viewportSize.width * 0.12,
               ),
-              16,
+              19,
               null,
             );
       if (_disposed) return;
       await _map.flyTo(camera, MapAnimationOptions(duration: 600));
     }
     if (_disposed) return;
-    await _showRoute(routePath);
+    if (!listEquals(alternativeRoutePath, _lastAlternativePath)) {
+      await _alternatives?.deleteAll();
+      if (_disposed) return;
+      if (alternativeRoutePath.length >= 2) {
+        await _alternatives?.create(
+          PolylineAnnotationOptions(
+            geometry: LineString(
+              coordinates: alternativeRoutePath
+                  .map((p) => Position(p.longitude, p.latitude))
+                  .toList(),
+            ),
+            lineColor: 0xFF94A59D,
+            lineWidth: 5,
+            lineBorderWidth: 1,
+            lineBorderColor: 0xFFFFFFFF,
+          ),
+        );
+      }
+      _lastAlternativePath = List.unmodifiable(alternativeRoutePath);
+    }
+    await _showRoute(MapRoutePaint(path: routePath, segments: routeSegments));
     if (_disposed) return;
     await _showLocation(state.currentLocation);
     if (_disposed) return;
     await _showPins(markers);
   });
 
-  Future<void> _showRoute(List<GeoCoordinate> path) async {
+  Future<void> _showRoute(MapRoutePaint paint) async {
+    final path = paint.path;
     final routes = _routes;
-    if (routes == null || _disposed || listEquals(path, _lastRoutePath)) return;
+    if (routes == null || _disposed || paint == _lastRoutePaint) return;
     await routes.deleteAll();
+    await _segments?.deleteAll();
+    if (_disposed) return;
+    await _routeEnds?.deleteAll();
     if (_disposed) return;
     if (path.length >= 2) {
       await routes.create(
@@ -109,15 +269,79 @@ final class MapboxController {
                 .map((point) => Position(point.longitude, point.latitude))
                 .toList(growable: false),
           ),
-          lineColor: 0xFF23785C,
+          lineColor: MapRouteColors.neutral,
           lineWidth: 6,
           lineBorderColor: 0xFFFFFFFF,
           lineBorderWidth: 2,
           lineJoin: LineJoin.ROUND,
         ),
       );
+      if (_disposed) return;
+      await _segments?.createMulti([
+        for (final segment in paint.segments)
+          PolylineAnnotationOptions(
+            geometry: LineString(
+              coordinates: segment.path
+                  .map((p) => Position(p.longitude, p.latitude))
+                  .toList(),
+            ),
+            lineColor: segment.state == MapShadeState.shade
+                ? MapRouteColors.shade
+                : MapRouteColors.sunlight,
+            lineWidth: 6,
+            lineBorderColor: 0xFFFFFFFF,
+            lineBorderWidth: 2,
+            lineJoin: LineJoin.ROUND,
+          ),
+      ]);
+      if (_disposed) return;
+      await _routeEnds?.createMulti([
+        for (final coordinate in [path.first, path.last])
+          CircleAnnotationOptions(
+            geometry: pointFor(coordinate),
+            circleRadius: 5,
+            circleColor: 0xFFFFFFFF,
+            circleStrokeColor: 0xFF23785C,
+            circleStrokeWidth: 2,
+          ),
+      ]);
     }
-    _lastRoutePath = List.unmodifiable(path);
+    _lastRoutePaint = paint;
+  }
+
+  Future<void> _showCoverage(MapCoverage? coverage) async {
+    if (coverage == _lastCoverage || _disposed) return;
+    await _coverageSource?.updateGeoJSON(coverageGeoJson(coverage));
+    if (_disposed) return;
+    await _accessPoints?.deleteAll();
+    _accessById.clear();
+    if (coverage != null) {
+      final image = await createMapPinImage(0xFF527D6D);
+      final annotations = await _accessPoints?.createMulti([
+        for (final point in coverage.accessPoints)
+          PointAnnotationOptions(
+            geometry: pointFor(point.coordinate),
+            image: image,
+            iconSize: 0.35,
+            iconAnchor: IconAnchor.BOTTOM,
+            textField: point.name,
+            textSize: 11,
+            textOffset: [0, 0.5],
+            textAnchor: TextAnchor.TOP,
+            textColor: 0xFF345F50,
+            textHaloColor: 0xFFFFFFFF,
+            textHaloWidth: 2,
+          ),
+      ]);
+      if (_disposed) return;
+      for (var i = 0; i < (annotations?.length ?? 0); i++) {
+        final annotation = annotations![i];
+        if (annotation != null) {
+          _accessById[annotation.id] = coverage.accessPoints[i];
+        }
+      }
+    }
+    _lastCoverage = coverage;
   }
 
   Future<void> _showLocation(GeoCoordinate? coordinate) async {
@@ -188,6 +412,13 @@ final class MapboxController {
   void dispose() {
     _disposed = true;
     _routes = null;
+    _alternatives = null;
+    _segments = null;
+    _accessTaps?.cancel();
+    _accessPoints = null;
+    _coverageSource = null;
+    _accessById.clear();
+    _routeEnds = null;
     _locations = null;
     _pins = null;
     _pinImages.clear();

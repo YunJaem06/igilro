@@ -9,9 +9,13 @@ enum MapLoadStatus { loading, ready, failed }
 @freezed
 abstract class MapState with _$MapState {
   const factory MapState({
-    @Default(GeoCoordinate(latitude: 37.5665, longitude: 126.9780))
+    @Default(GeoCoordinate(latitude: 37.5476, longitude: 127.0385))
     GeoCoordinate center,
-    @Default(14) double zoom,
+    @Default(16) double zoom,
+    @Default(true) bool is3D,
+    @Default(false) bool followLocation,
+    @Default(0) double bearing,
+    DateTime? lightingAt,
     GeoCoordinate? currentLocation,
     @Default([]) List<GeoCoordinate> framedCoordinates,
     @Default(MapLoadStatus.loading) MapLoadStatus status,

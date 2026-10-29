@@ -549,7 +549,7 @@ packages:
     source: hosted
     version: "3.0.0"
   mapbox_maps_flutter_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: mapbox_maps_flutter_platform_interface
       sha256: "4d4bdee57b452256ad463fbdef2a5a968a824c0af40c31d20925d5ae88b7b268"
