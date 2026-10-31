@@ -1438,6 +1438,7 @@ mixin _$PredictedRouteDto {
   int get additionalDurationSeconds;
   ModeledShadePredictionDto get prediction;
   List<PredictionShadeSegmentDto> get shadeSegments;
+  RouteGuidanceDto? get guidance;
 
   /// Create a copy of PredictedRouteDto
   /// with the given fields replaced by the non-null parameter values.
@@ -1477,7 +1478,9 @@ mixin _$PredictedRouteDto {
             const DeepCollectionEquality().equals(
               other.shadeSegments,
               _this.shadeSegments,
-            ));
+            ) &&
+            (identical(other.guidance, _this.guidance) ||
+                other.guidance == _this.guidance));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1494,13 +1497,14 @@ mixin _$PredictedRouteDto {
       _this.additionalDurationSeconds,
       _this.prediction,
       const DeepCollectionEquality().hash(_this.shadeSegments),
+      _this.guidance,
     );
   }
 
   @override
   String toString() {
     final _this = this as PredictedRouteDto;
-    return 'PredictedRouteDto(id: ${_this.id}, mode: ${_this.mode}, geometry: ${_this.geometry}, distanceMeters: ${_this.distanceMeters}, durationSeconds: ${_this.durationSeconds}, additionalDurationSeconds: ${_this.additionalDurationSeconds}, prediction: ${_this.prediction}, shadeSegments: ${_this.shadeSegments})';
+    return 'PredictedRouteDto(id: ${_this.id}, mode: ${_this.mode}, geometry: ${_this.geometry}, distanceMeters: ${_this.distanceMeters}, durationSeconds: ${_this.durationSeconds}, additionalDurationSeconds: ${_this.additionalDurationSeconds}, prediction: ${_this.prediction}, shadeSegments: ${_this.shadeSegments}, guidance: ${_this.guidance})';
   }
 }
 
@@ -1520,10 +1524,12 @@ abstract mixin class $PredictedRouteDtoCopyWith<$Res> {
     @JsonKey(fromJson: _wholeNumber) int additionalDurationSeconds,
     ModeledShadePredictionDto prediction,
     List<PredictionShadeSegmentDto> shadeSegments,
+    RouteGuidanceDto? guidance,
   });
 
   $PredictionGeometryDtoCopyWith<$Res> get geometry;
   $ModeledShadePredictionDtoCopyWith<$Res> get prediction;
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -1547,6 +1553,7 @@ class _$PredictedRouteDtoCopyWithImpl<$Res>
     Object? additionalDurationSeconds = null,
     Object? prediction = null,
     Object? shadeSegments = null,
+    Object? guidance = freezed,
   }) {
     return _then(
       PredictedRouteDto(
@@ -1582,6 +1589,10 @@ class _$PredictedRouteDtoCopyWithImpl<$Res>
             ? _self.shadeSegments
             : shadeSegments // ignore: cast_nullable_to_non_nullable
                   as List<PredictionShadeSegmentDto>,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidanceDto?,
       ),
     );
   }
@@ -1603,6 +1614,20 @@ class _$PredictedRouteDtoCopyWithImpl<$Res>
   $ModeledShadePredictionDtoCopyWith<$Res> get prediction {
     return $ModeledShadePredictionDtoCopyWith<$Res>(_self.prediction, (value) {
       return _then(_self.copyWith(prediction: value));
+    });
+  }
+
+  /// Create a copy of PredictedRouteDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceDtoCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }
@@ -1709,6 +1734,7 @@ extension PredictedRouteDtoPatterns on PredictedRouteDto {
       @JsonKey(fromJson: _wholeNumber) int additionalDurationSeconds,
       ModeledShadePredictionDto prediction,
       List<PredictionShadeSegmentDto> shadeSegments,
+      RouteGuidanceDto? guidance,
     )?
     $default, {
     required TResult orElse(),
@@ -1725,6 +1751,7 @@ extension PredictedRouteDtoPatterns on PredictedRouteDto {
           _that.additionalDurationSeconds,
           _that.prediction,
           _that.shadeSegments,
+          _that.guidance,
         );
       case _:
         return orElse();
@@ -1755,6 +1782,7 @@ extension PredictedRouteDtoPatterns on PredictedRouteDto {
       @JsonKey(fromJson: _wholeNumber) int additionalDurationSeconds,
       ModeledShadePredictionDto prediction,
       List<PredictionShadeSegmentDto> shadeSegments,
+      RouteGuidanceDto? guidance,
     )
     $default,
   ) {
@@ -1770,6 +1798,7 @@ extension PredictedRouteDtoPatterns on PredictedRouteDto {
           _that.additionalDurationSeconds,
           _that.prediction,
           _that.shadeSegments,
+          _that.guidance,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -1799,6 +1828,7 @@ extension PredictedRouteDtoPatterns on PredictedRouteDto {
       @JsonKey(fromJson: _wholeNumber) int additionalDurationSeconds,
       ModeledShadePredictionDto prediction,
       List<PredictionShadeSegmentDto> shadeSegments,
+      RouteGuidanceDto? guidance,
     )?
     $default,
   ) {
@@ -1814,6 +1844,7 @@ extension PredictedRouteDtoPatterns on PredictedRouteDto {
           _that.additionalDurationSeconds,
           _that.prediction,
           _that.shadeSegments,
+          _that.guidance,
         );
       case _:
         return null;
@@ -1834,6 +1865,7 @@ class _PredictedRouteDto implements PredictedRouteDto {
     @JsonKey(fromJson: _wholeNumber) required this.additionalDurationSeconds,
     required this.prediction,
     List<PredictionShadeSegmentDto> shadeSegments = const [],
+    this.guidance,
   }) : _shadeSegments = shadeSegments;
   factory _PredictedRouteDto.fromJson(Map<String, dynamic> json) =>
       _$PredictedRouteDtoFromJson(json);
@@ -1862,6 +1894,9 @@ class _PredictedRouteDto implements PredictedRouteDto {
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_shadeSegments);
   }
+
+  @override
+  final RouteGuidanceDto? guidance;
 
   /// Create a copy of PredictedRouteDto
   /// with the given fields replaced by the non-null parameter values.
@@ -1899,7 +1934,9 @@ class _PredictedRouteDto implements PredictedRouteDto {
             const DeepCollectionEquality().equals(
               other.shadeSegments,
               _shadeSegments,
-            ));
+            ) &&
+            (identical(other.guidance, guidance) ||
+                other.guidance == guidance));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1915,12 +1952,13 @@ class _PredictedRouteDto implements PredictedRouteDto {
       additionalDurationSeconds,
       prediction,
       const DeepCollectionEquality().hash(_shadeSegments),
+      guidance,
     );
   }
 
   @override
   String toString() {
-    return 'PredictedRouteDto(id: $id, mode: $mode, geometry: $geometry, distanceMeters: $distanceMeters, durationSeconds: $durationSeconds, additionalDurationSeconds: $additionalDurationSeconds, prediction: $prediction, shadeSegments: $shadeSegments)';
+    return 'PredictedRouteDto(id: $id, mode: $mode, geometry: $geometry, distanceMeters: $distanceMeters, durationSeconds: $durationSeconds, additionalDurationSeconds: $additionalDurationSeconds, prediction: $prediction, shadeSegments: $shadeSegments, guidance: $guidance)';
   }
 }
 
@@ -1942,12 +1980,15 @@ abstract mixin class _$PredictedRouteDtoCopyWith<$Res>
     @JsonKey(fromJson: _wholeNumber) int additionalDurationSeconds,
     ModeledShadePredictionDto prediction,
     List<PredictionShadeSegmentDto> shadeSegments,
+    RouteGuidanceDto? guidance,
   });
 
   @override
   $PredictionGeometryDtoCopyWith<$Res> get geometry;
   @override
   $ModeledShadePredictionDtoCopyWith<$Res> get prediction;
+  @override
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -1971,6 +2012,7 @@ class __$PredictedRouteDtoCopyWithImpl<$Res>
     Object? additionalDurationSeconds = null,
     Object? prediction = null,
     Object? shadeSegments = null,
+    Object? guidance = freezed,
   }) {
     return _then(
       _PredictedRouteDto(
@@ -2006,6 +2048,10 @@ class __$PredictedRouteDtoCopyWithImpl<$Res>
             ? _self._shadeSegments
             : shadeSegments // ignore: cast_nullable_to_non_nullable
                   as List<PredictionShadeSegmentDto>,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidanceDto?,
       ),
     );
   }
@@ -2027,6 +2073,20 @@ class __$PredictedRouteDtoCopyWithImpl<$Res>
   $ModeledShadePredictionDtoCopyWith<$Res> get prediction {
     return $ModeledShadePredictionDtoCopyWith<$Res>(_self.prediction, (value) {
       return _then(_self.copyWith(prediction: value));
+    });
+  }
+
+  /// Create a copy of PredictedRouteDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceDtoCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }

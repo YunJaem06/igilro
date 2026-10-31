@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'route_guidance_dto.dart';
+
 part 'model_route_prediction_dto.freezed.dart';
 part 'model_route_prediction_dto.g.dart';
 
@@ -63,6 +65,7 @@ abstract class PredictedRouteDto with _$PredictedRouteDto {
     @JsonKey(fromJson: _wholeNumber) required int additionalDurationSeconds,
     required ModeledShadePredictionDto prediction,
     @Default([]) List<PredictionShadeSegmentDto> shadeSegments,
+    RouteGuidanceDto? guidance,
   }) = _PredictedRouteDto;
 
   factory PredictedRouteDto.fromJson(Map<String, dynamic> json) =>

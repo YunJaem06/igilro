@@ -51,6 +51,9 @@ _RouteCandidateDto _$RouteCandidateDtoFromJson(
       : RouteShadeEvaluationDto.fromJson(
           json['shadeEvaluation'] as Map<String, dynamic>,
         ),
+  guidance: json['guidance'] == null
+      ? null
+      : RouteGuidanceDto.fromJson(json['guidance'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$RouteCandidateDtoToJson(_RouteCandidateDto instance) =>
@@ -63,6 +66,7 @@ Map<String, dynamic> _$RouteCandidateDtoToJson(_RouteCandidateDto instance) =>
       'additionalDurationSeconds': instance.additionalDurationSeconds,
       'metrics': instance.metrics.toJson(),
       'shadeEvaluation': instance.shadeEvaluation?.toJson(),
+      'guidance': instance.guidance?.toJson(),
     };
 
 _RouteShadeEvaluationDto _$RouteShadeEvaluationDtoFromJson(

@@ -105,6 +105,9 @@ _PredictedRouteDto _$PredictedRouteDtoFromJson(
           )
           .toList() ??
       const [],
+  guidance: json['guidance'] == null
+      ? null
+      : RouteGuidanceDto.fromJson(json['guidance'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$PredictedRouteDtoToJson(_PredictedRouteDto instance) =>
@@ -117,6 +120,7 @@ Map<String, dynamic> _$PredictedRouteDtoToJson(_PredictedRouteDto instance) =>
       'additionalDurationSeconds': instance.additionalDurationSeconds,
       'prediction': instance.prediction.toJson(),
       'shadeSegments': instance.shadeSegments.map((e) => e.toJson()).toList(),
+      'guidance': instance.guidance?.toJson(),
     };
 
 _PredictionShadeSegmentDto _$PredictionShadeSegmentDtoFromJson(

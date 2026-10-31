@@ -4,6 +4,7 @@ import '../../domain/entities/route_query.dart';
 import '../../domain/entities/route_search_result.dart';
 import '../dto/route_search_request_dto.dart';
 import '../dto/route_search_response_dto.dart';
+import 'route_guidance_mapper.dart';
 
 final class RouteMapper {
   const RouteMapper();
@@ -71,20 +72,21 @@ final class RouteMapper {
         throw const FormatException('An unevaluated shade ratio must be null.');
       }
     }
+    final path = dto.geometry.coordinates
+        .map((position) {
+          if (position.length != 2) {
+            throw const FormatException('Expected a two-dimensional position.');
+          }
+          return _coordinate(position[0], position[1]);
+        })
+        .toList(growable: false);
+    final distance = _distance(dto.distanceMeters);
+    final duration = _duration(dto.durationSeconds);
     return RouteCandidate(
       id: _nonBlank(dto.id),
-      path: dto.geometry.coordinates
-          .map((position) {
-            if (position.length != 2) {
-              throw const FormatException(
-                'Expected a two-dimensional position.',
-              );
-            }
-            return _coordinate(position[0], position[1]);
-          })
-          .toList(growable: false),
-      distanceMeters: _distance(dto.distanceMeters),
-      duration: _duration(dto.durationSeconds),
+      path: path,
+      distanceMeters: distance,
+      duration: duration,
       additionalDuration: _duration(dto.additionalDurationSeconds),
       metrics: RouteMetrics(
         shadeRatio: shadeRatio,
@@ -93,6 +95,12 @@ final class RouteMapper {
         trafficSignalCount: signals,
       ),
       shadeEvaluation: shade,
+      guidance: const RouteGuidanceMapper().toEntity(
+        dto.guidance,
+        path: path,
+        distanceMeters: distance,
+        duration: duration,
+      ),
     );
   }
 

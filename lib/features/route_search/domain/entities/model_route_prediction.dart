@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../core/geo/geo_coordinate.dart';
+import 'route_guidance.dart';
 
 part 'model_route_prediction.freezed.dart';
 
@@ -55,6 +56,7 @@ abstract class PredictedRoute with _$PredictedRoute {
     required Duration additionalDuration,
     required ModeledShadePrediction prediction,
     @Default([]) List<PredictedShadeSegment> shadeSegments,
+    RouteGuidance? guidance,
   }) = _PredictedRoute;
 }
 

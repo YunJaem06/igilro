@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../core/geo/geo_coordinate.dart';
+import 'route_guidance.dart';
 
 part 'route_candidate.freezed.dart';
 
@@ -14,6 +15,7 @@ abstract class RouteCandidate with _$RouteCandidate {
     required Duration additionalDuration,
     required RouteMetrics metrics,
     RouteShadeEvaluation? shadeEvaluation,
+    RouteGuidance? guidance,
   }) = _RouteCandidate;
 }
 

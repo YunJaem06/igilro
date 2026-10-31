@@ -21,6 +21,7 @@ mixin _$RouteCandidate {
   Duration get additionalDuration;
   RouteMetrics get metrics;
   RouteShadeEvaluation? get shadeEvaluation;
+  RouteGuidance? get guidance;
 
   /// Create a copy of RouteCandidate
   /// with the given fields replaced by the non-null parameter values.
@@ -49,7 +50,9 @@ mixin _$RouteCandidate {
             (identical(other.metrics, _this.metrics) ||
                 other.metrics == _this.metrics) &&
             (identical(other.shadeEvaluation, _this.shadeEvaluation) ||
-                other.shadeEvaluation == _this.shadeEvaluation));
+                other.shadeEvaluation == _this.shadeEvaluation) &&
+            (identical(other.guidance, _this.guidance) ||
+                other.guidance == _this.guidance));
   }
 
   @override
@@ -64,13 +67,14 @@ mixin _$RouteCandidate {
       _this.additionalDuration,
       _this.metrics,
       _this.shadeEvaluation,
+      _this.guidance,
     );
   }
 
   @override
   String toString() {
     final _this = this as RouteCandidate;
-    return 'RouteCandidate(id: ${_this.id}, path: ${_this.path}, distanceMeters: ${_this.distanceMeters}, duration: ${_this.duration}, additionalDuration: ${_this.additionalDuration}, metrics: ${_this.metrics}, shadeEvaluation: ${_this.shadeEvaluation})';
+    return 'RouteCandidate(id: ${_this.id}, path: ${_this.path}, distanceMeters: ${_this.distanceMeters}, duration: ${_this.duration}, additionalDuration: ${_this.additionalDuration}, metrics: ${_this.metrics}, shadeEvaluation: ${_this.shadeEvaluation}, guidance: ${_this.guidance})';
   }
 }
 
@@ -89,10 +93,12 @@ abstract mixin class $RouteCandidateCopyWith<$Res> {
     Duration additionalDuration,
     RouteMetrics metrics,
     RouteShadeEvaluation? shadeEvaluation,
+    RouteGuidance? guidance,
   });
 
   $RouteMetricsCopyWith<$Res> get metrics;
   $RouteShadeEvaluationCopyWith<$Res>? get shadeEvaluation;
+  $RouteGuidanceCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -115,6 +121,7 @@ class _$RouteCandidateCopyWithImpl<$Res>
     Object? additionalDuration = null,
     Object? metrics = null,
     Object? shadeEvaluation = freezed,
+    Object? guidance = freezed,
   }) {
     return _then(
       RouteCandidate(
@@ -146,6 +153,10 @@ class _$RouteCandidateCopyWithImpl<$Res>
             ? _self.shadeEvaluation
             : shadeEvaluation // ignore: cast_nullable_to_non_nullable
                   as RouteShadeEvaluation?,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidance?,
       ),
     );
   }
@@ -171,6 +182,20 @@ class _$RouteCandidateCopyWithImpl<$Res>
 
     return $RouteShadeEvaluationCopyWith<$Res>(_self.shadeEvaluation!, (value) {
       return _then(_self.copyWith(shadeEvaluation: value));
+    });
+  }
+
+  /// Create a copy of RouteCandidate
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }
@@ -276,6 +301,7 @@ extension RouteCandidatePatterns on RouteCandidate {
       Duration additionalDuration,
       RouteMetrics metrics,
       RouteShadeEvaluation? shadeEvaluation,
+      RouteGuidance? guidance,
     )?
     $default, {
     required TResult orElse(),
@@ -291,6 +317,7 @@ extension RouteCandidatePatterns on RouteCandidate {
           _that.additionalDuration,
           _that.metrics,
           _that.shadeEvaluation,
+          _that.guidance,
         );
       case _:
         return orElse();
@@ -320,6 +347,7 @@ extension RouteCandidatePatterns on RouteCandidate {
       Duration additionalDuration,
       RouteMetrics metrics,
       RouteShadeEvaluation? shadeEvaluation,
+      RouteGuidance? guidance,
     )
     $default,
   ) {
@@ -334,6 +362,7 @@ extension RouteCandidatePatterns on RouteCandidate {
           _that.additionalDuration,
           _that.metrics,
           _that.shadeEvaluation,
+          _that.guidance,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -362,6 +391,7 @@ extension RouteCandidatePatterns on RouteCandidate {
       Duration additionalDuration,
       RouteMetrics metrics,
       RouteShadeEvaluation? shadeEvaluation,
+      RouteGuidance? guidance,
     )?
     $default,
   ) {
@@ -376,6 +406,7 @@ extension RouteCandidatePatterns on RouteCandidate {
           _that.additionalDuration,
           _that.metrics,
           _that.shadeEvaluation,
+          _that.guidance,
         );
       case _:
         return null;
@@ -394,6 +425,7 @@ class _RouteCandidate implements RouteCandidate {
     required this.additionalDuration,
     required this.metrics,
     this.shadeEvaluation,
+    this.guidance,
   }) : _path = path;
 
   @override
@@ -416,6 +448,8 @@ class _RouteCandidate implements RouteCandidate {
   final RouteMetrics metrics;
   @override
   final RouteShadeEvaluation? shadeEvaluation;
+  @override
+  final RouteGuidance? guidance;
 
   /// Create a copy of RouteCandidate
   /// with the given fields replaced by the non-null parameter values.
@@ -440,7 +474,9 @@ class _RouteCandidate implements RouteCandidate {
                 other.additionalDuration == additionalDuration) &&
             (identical(other.metrics, metrics) || other.metrics == metrics) &&
             (identical(other.shadeEvaluation, shadeEvaluation) ||
-                other.shadeEvaluation == shadeEvaluation));
+                other.shadeEvaluation == shadeEvaluation) &&
+            (identical(other.guidance, guidance) ||
+                other.guidance == guidance));
   }
 
   @override
@@ -454,12 +490,13 @@ class _RouteCandidate implements RouteCandidate {
       additionalDuration,
       metrics,
       shadeEvaluation,
+      guidance,
     );
   }
 
   @override
   String toString() {
-    return 'RouteCandidate(id: $id, path: $path, distanceMeters: $distanceMeters, duration: $duration, additionalDuration: $additionalDuration, metrics: $metrics, shadeEvaluation: $shadeEvaluation)';
+    return 'RouteCandidate(id: $id, path: $path, distanceMeters: $distanceMeters, duration: $duration, additionalDuration: $additionalDuration, metrics: $metrics, shadeEvaluation: $shadeEvaluation, guidance: $guidance)';
   }
 }
 
@@ -480,12 +517,15 @@ abstract mixin class _$RouteCandidateCopyWith<$Res>
     Duration additionalDuration,
     RouteMetrics metrics,
     RouteShadeEvaluation? shadeEvaluation,
+    RouteGuidance? guidance,
   });
 
   @override
   $RouteMetricsCopyWith<$Res> get metrics;
   @override
   $RouteShadeEvaluationCopyWith<$Res>? get shadeEvaluation;
+  @override
+  $RouteGuidanceCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -508,6 +548,7 @@ class __$RouteCandidateCopyWithImpl<$Res>
     Object? additionalDuration = null,
     Object? metrics = null,
     Object? shadeEvaluation = freezed,
+    Object? guidance = freezed,
   }) {
     return _then(
       _RouteCandidate(
@@ -539,6 +580,10 @@ class __$RouteCandidateCopyWithImpl<$Res>
             ? _self.shadeEvaluation
             : shadeEvaluation // ignore: cast_nullable_to_non_nullable
                   as RouteShadeEvaluation?,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidance?,
       ),
     );
   }
@@ -564,6 +609,20 @@ class __$RouteCandidateCopyWithImpl<$Res>
 
     return $RouteShadeEvaluationCopyWith<$Res>(_self.shadeEvaluation!, (value) {
       return _then(_self.copyWith(shadeEvaluation: value));
+    });
+  }
+
+  /// Create a copy of RouteCandidate
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }

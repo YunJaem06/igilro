@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'route_search_request_dto.dart';
+import 'route_guidance_dto.dart';
 
 part 'route_search_response_dto.freezed.dart';
 part 'route_search_response_dto.g.dart';
@@ -38,6 +39,7 @@ abstract class RouteCandidateDto with _$RouteCandidateDto {
     @JsonKey(fromJson: _readWholeNumber) required int additionalDurationSeconds,
     required RouteMetricsDto metrics,
     RouteShadeEvaluationDto? shadeEvaluation,
+    RouteGuidanceDto? guidance,
   }) = _RouteCandidateDto;
 
   factory RouteCandidateDto.fromJson(Map<String, dynamic> json) =>

@@ -2,16 +2,19 @@ import 'dart:math' as math;
 
 import '../../location/domain/entities/location_fix.dart';
 import '../../../core/geo/geo_coordinate.dart';
+import '../../route_search/domain/entities/route_guidance.dart';
 
 final class NavigationRoute {
   NavigationRoute({
     required List<GeoCoordinate> path,
     required this.distanceMeters,
     required this.duration,
+    this.guidance,
   }) : path = List.unmodifiable(path);
   final List<GeoCoordinate> path;
   final double distanceMeters;
   final Duration duration;
+  final RouteGuidance? guidance;
 }
 
 final class NavigationProgress {
@@ -21,12 +24,45 @@ final class NavigationProgress {
     required this.fraction,
     required this.bearing,
     required this.arrived,
+    this.geometryPosition = 0,
   });
   final double remainingMeters;
   final double distanceToRoute;
   final double fraction;
   final double bearing;
   final bool arrived;
+
+  /// Original segment index plus its matched fraction; never simplified.
+  final double geometryPosition;
+}
+
+final class NavigationInstruction {
+  const NavigationInstruction({
+    required this.step,
+    required this.distanceMeters,
+  });
+  final RouteGuidanceStep step;
+  final double distanceMeters;
+}
+
+NavigationInstruction? nextInstruction(
+  NavigationRoute route,
+  NavigationProgress progress,
+) {
+  final guidance = route.guidance;
+  if (guidance == null || guidance.status != RouteGuidanceStatus.available) {
+    return null;
+  }
+  for (final step in guidance.steps.skip(1)) {
+    if (step.geometryIndex + 1e-6 >= progress.geometryPosition) {
+      final traveled = route.distanceMeters * progress.fraction;
+      return NavigationInstruction(
+        step: step,
+        distanceMeters: math.max(0, step.distanceFromStartMeters - traveled),
+      );
+    }
+  }
+  return null;
 }
 
 /// Matches a GPS fix to the supplied line; never invents an access route.
@@ -45,6 +81,7 @@ NavigationProgress measureProgress(NavigationRoute route, LocationFix fix) {
   var matched = 0.0;
   var nearest = double.infinity;
   var bearing = 0.0;
+  var geometryPosition = 0.0;
   for (var i = 0; i < route.path.length - 1; i++) {
     final a = route.path[i], b = route.path[i + 1];
     final ax = x(a), ay = y(a), dx = x(b) - ax, dy = y(b) - ay;
@@ -59,6 +96,7 @@ NavigationProgress measureProgress(NavigationRoute route, LocationFix fix) {
       nearest = distance;
       matched = total + length * t;
       bearing = (math.atan2(dx, dy) / rad + 360) % 360;
+      geometryPosition = i + t;
     }
     total += length;
   }
@@ -74,5 +112,6 @@ NavigationProgress measureProgress(NavigationRoute route, LocationFix fix) {
     fraction: fraction,
     bearing: bearing,
     arrived: fraction >= 0.9 && endDistance <= 15 && fix.accuracyMeters <= 25,
+    geometryPosition: geometryPosition,
   );
 }

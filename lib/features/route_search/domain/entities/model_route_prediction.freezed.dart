@@ -1402,6 +1402,7 @@ mixin _$PredictedRoute {
   Duration get additionalDuration;
   ModeledShadePrediction get prediction;
   List<PredictedShadeSegment> get shadeSegments;
+  RouteGuidance? get guidance;
 
   /// Create a copy of PredictedRoute
   /// with the given fields replaced by the non-null parameter values.
@@ -1433,7 +1434,9 @@ mixin _$PredictedRoute {
             const DeepCollectionEquality().equals(
               other.shadeSegments,
               _this.shadeSegments,
-            ));
+            ) &&
+            (identical(other.guidance, _this.guidance) ||
+                other.guidance == _this.guidance));
   }
 
   @override
@@ -1449,13 +1452,14 @@ mixin _$PredictedRoute {
       _this.additionalDuration,
       _this.prediction,
       const DeepCollectionEquality().hash(_this.shadeSegments),
+      _this.guidance,
     );
   }
 
   @override
   String toString() {
     final _this = this as PredictedRoute;
-    return 'PredictedRoute(id: ${_this.id}, mode: ${_this.mode}, path: ${_this.path}, distanceMeters: ${_this.distanceMeters}, duration: ${_this.duration}, additionalDuration: ${_this.additionalDuration}, prediction: ${_this.prediction}, shadeSegments: ${_this.shadeSegments})';
+    return 'PredictedRoute(id: ${_this.id}, mode: ${_this.mode}, path: ${_this.path}, distanceMeters: ${_this.distanceMeters}, duration: ${_this.duration}, additionalDuration: ${_this.additionalDuration}, prediction: ${_this.prediction}, shadeSegments: ${_this.shadeSegments}, guidance: ${_this.guidance})';
   }
 }
 
@@ -1475,9 +1479,11 @@ abstract mixin class $PredictedRouteCopyWith<$Res> {
     Duration additionalDuration,
     ModeledShadePrediction prediction,
     List<PredictedShadeSegment> shadeSegments,
+    RouteGuidance? guidance,
   });
 
   $ModeledShadePredictionCopyWith<$Res> get prediction;
+  $RouteGuidanceCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -1501,6 +1507,7 @@ class _$PredictedRouteCopyWithImpl<$Res>
     Object? additionalDuration = null,
     Object? prediction = null,
     Object? shadeSegments = null,
+    Object? guidance = freezed,
   }) {
     return _then(
       PredictedRoute(
@@ -1536,6 +1543,10 @@ class _$PredictedRouteCopyWithImpl<$Res>
             ? _self.shadeSegments
             : shadeSegments // ignore: cast_nullable_to_non_nullable
                   as List<PredictedShadeSegment>,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidance?,
       ),
     );
   }
@@ -1547,6 +1558,20 @@ class _$PredictedRouteCopyWithImpl<$Res>
   $ModeledShadePredictionCopyWith<$Res> get prediction {
     return $ModeledShadePredictionCopyWith<$Res>(_self.prediction, (value) {
       return _then(_self.copyWith(prediction: value));
+    });
+  }
+
+  /// Create a copy of PredictedRoute
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }
@@ -1653,6 +1678,7 @@ extension PredictedRoutePatterns on PredictedRoute {
       Duration additionalDuration,
       ModeledShadePrediction prediction,
       List<PredictedShadeSegment> shadeSegments,
+      RouteGuidance? guidance,
     )?
     $default, {
     required TResult orElse(),
@@ -1669,6 +1695,7 @@ extension PredictedRoutePatterns on PredictedRoute {
           _that.additionalDuration,
           _that.prediction,
           _that.shadeSegments,
+          _that.guidance,
         );
       case _:
         return orElse();
@@ -1699,6 +1726,7 @@ extension PredictedRoutePatterns on PredictedRoute {
       Duration additionalDuration,
       ModeledShadePrediction prediction,
       List<PredictedShadeSegment> shadeSegments,
+      RouteGuidance? guidance,
     )
     $default,
   ) {
@@ -1714,6 +1742,7 @@ extension PredictedRoutePatterns on PredictedRoute {
           _that.additionalDuration,
           _that.prediction,
           _that.shadeSegments,
+          _that.guidance,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -1743,6 +1772,7 @@ extension PredictedRoutePatterns on PredictedRoute {
       Duration additionalDuration,
       ModeledShadePrediction prediction,
       List<PredictedShadeSegment> shadeSegments,
+      RouteGuidance? guidance,
     )?
     $default,
   ) {
@@ -1758,6 +1788,7 @@ extension PredictedRoutePatterns on PredictedRoute {
           _that.additionalDuration,
           _that.prediction,
           _that.shadeSegments,
+          _that.guidance,
         );
       case _:
         return null;
@@ -1777,6 +1808,7 @@ class _PredictedRoute implements PredictedRoute {
     required this.additionalDuration,
     required this.prediction,
     List<PredictedShadeSegment> shadeSegments = const [],
+    this.guidance,
   }) : _path = path,
        _shadeSegments = shadeSegments;
 
@@ -1809,6 +1841,9 @@ class _PredictedRoute implements PredictedRoute {
     return EqualUnmodifiableListView(_shadeSegments);
   }
 
+  @override
+  final RouteGuidance? guidance;
+
   /// Create a copy of PredictedRoute
   /// with the given fields replaced by the non-null parameter values.
   @override
@@ -1836,7 +1871,9 @@ class _PredictedRoute implements PredictedRoute {
             const DeepCollectionEquality().equals(
               other.shadeSegments,
               _shadeSegments,
-            ));
+            ) &&
+            (identical(other.guidance, guidance) ||
+                other.guidance == guidance));
   }
 
   @override
@@ -1851,12 +1888,13 @@ class _PredictedRoute implements PredictedRoute {
       additionalDuration,
       prediction,
       const DeepCollectionEquality().hash(_shadeSegments),
+      guidance,
     );
   }
 
   @override
   String toString() {
-    return 'PredictedRoute(id: $id, mode: $mode, path: $path, distanceMeters: $distanceMeters, duration: $duration, additionalDuration: $additionalDuration, prediction: $prediction, shadeSegments: $shadeSegments)';
+    return 'PredictedRoute(id: $id, mode: $mode, path: $path, distanceMeters: $distanceMeters, duration: $duration, additionalDuration: $additionalDuration, prediction: $prediction, shadeSegments: $shadeSegments, guidance: $guidance)';
   }
 }
 
@@ -1878,10 +1916,13 @@ abstract mixin class _$PredictedRouteCopyWith<$Res>
     Duration additionalDuration,
     ModeledShadePrediction prediction,
     List<PredictedShadeSegment> shadeSegments,
+    RouteGuidance? guidance,
   });
 
   @override
   $ModeledShadePredictionCopyWith<$Res> get prediction;
+  @override
+  $RouteGuidanceCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -1905,6 +1946,7 @@ class __$PredictedRouteCopyWithImpl<$Res>
     Object? additionalDuration = null,
     Object? prediction = null,
     Object? shadeSegments = null,
+    Object? guidance = freezed,
   }) {
     return _then(
       _PredictedRoute(
@@ -1940,6 +1982,10 @@ class __$PredictedRouteCopyWithImpl<$Res>
             ? _self._shadeSegments
             : shadeSegments // ignore: cast_nullable_to_non_nullable
                   as List<PredictedShadeSegment>,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidance?,
       ),
     );
   }
@@ -1951,6 +1997,20 @@ class __$PredictedRouteCopyWithImpl<$Res>
   $ModeledShadePredictionCopyWith<$Res> get prediction {
     return $ModeledShadePredictionCopyWith<$Res>(_self.prediction, (value) {
       return _then(_self.copyWith(prediction: value));
+    });
+  }
+
+  /// Create a copy of PredictedRoute
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }

@@ -3,6 +3,7 @@ import '../../domain/entities/model_route_prediction.dart';
 import '../../domain/entities/prediction_coverage.dart';
 import '../dto/model_route_prediction_dto.dart';
 import '../dto/prediction_coverage_dto.dart';
+import 'route_guidance_mapper.dart';
 
 final class ModelRoutePredictionMapper {
   const ModelRoutePredictionMapper();
@@ -177,6 +178,12 @@ final class ModelRoutePredictionMapper {
       mode: mode,
       path: path,
       shadeSegments: segments,
+      guidance: const RouteGuidanceMapper().toEntity(
+        dto.guidance,
+        path: path,
+        distanceMeters: _nonNegative(dto.distanceMeters),
+        duration: _duration(dto.durationSeconds),
+      ),
       distanceMeters: _nonNegative(dto.distanceMeters),
       duration: _duration(dto.durationSeconds),
       additionalDuration: _duration(dto.additionalDurationSeconds),

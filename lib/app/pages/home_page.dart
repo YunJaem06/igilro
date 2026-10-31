@@ -77,6 +77,7 @@ class _HomePageState extends ConsumerState<HomePage>
               path: route.path,
               distanceMeters: route.distanceMeters,
               duration: route.duration,
+              guidance: route.guidance,
             );
     }
     final route = ref.read(routeSearchProvider).asData?.value?.routes.first;
@@ -86,6 +87,7 @@ class _HomePageState extends ConsumerState<HomePage>
             path: route.path,
             distanceMeters: route.distanceMeters,
             duration: route.duration,
+            guidance: route.guidance,
           );
   }
 

@@ -40,6 +40,21 @@ final class GuidanceState {
   final Failure? failure;
   final bool isPreview;
   bool get active => route != null;
+  NavigationInstruction? get instruction {
+    if (status != GuidanceStatus.following ||
+        route == null ||
+        progress == null) {
+      return null;
+    }
+    // Hide a suspect match immediately; the off-route status still requires
+    // consecutive fixes to avoid rerouting on a single GPS outlier.
+    if (fix != null &&
+        progress!.distanceToRoute >
+            (fix!.accuracyMeters * 1.5).clamp(30.0, 75.0)) {
+      return null;
+    }
+    return nextInstruction(route!, progress!);
+  }
 }
 
 @riverpod

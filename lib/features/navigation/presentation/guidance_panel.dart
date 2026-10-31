@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/failure.dart';
+import '../../route_search/domain/entities/route_guidance.dart';
 import 'navigation_notifier.dart';
+import 'guidance_instruction_card.dart';
 
 class GuidancePanel extends ConsumerWidget {
   const GuidancePanel({
@@ -38,6 +40,7 @@ class GuidancePanel extends ConsumerWidget {
             _ => '선택한 경로를 따라 걸어주세요',
           };
     final remaining = state.progress?.remainingMeters;
+    final instruction = state.instruction;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -51,6 +54,19 @@ class GuidancePanel extends ConsumerWidget {
             ),
           ],
         ),
+        if (instruction != null)
+          GuidanceInstructionCard(
+            instruction: instruction,
+            metadataStatus: state.route!.guidance!.metadataStatus,
+          )
+        else if (state.status == GuidanceStatus.following) ...[
+          const SizedBox(height: 8),
+          Text(
+            state.route?.guidance?.status == RouteGuidanceStatus.available
+                ? '경로 위 위치를 확인하고 있어요.'
+                : '단계별 안내 정보가 없어 경로 진행 상황만 표시해요.',
+          ),
+        ],
         if (remaining != null &&
             {
               GuidanceStatus.following,

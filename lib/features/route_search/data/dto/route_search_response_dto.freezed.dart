@@ -605,6 +605,7 @@ mixin _$RouteCandidateDto {
   int get additionalDurationSeconds;
   RouteMetricsDto get metrics;
   RouteShadeEvaluationDto? get shadeEvaluation;
+  RouteGuidanceDto? get guidance;
 
   /// Create a copy of RouteCandidateDto
   /// with the given fields replaced by the non-null parameter values.
@@ -642,7 +643,9 @@ mixin _$RouteCandidateDto {
             (identical(other.metrics, _this.metrics) ||
                 other.metrics == _this.metrics) &&
             (identical(other.shadeEvaluation, _this.shadeEvaluation) ||
-                other.shadeEvaluation == _this.shadeEvaluation));
+                other.shadeEvaluation == _this.shadeEvaluation) &&
+            (identical(other.guidance, _this.guidance) ||
+                other.guidance == _this.guidance));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -659,13 +662,14 @@ mixin _$RouteCandidateDto {
       _this.additionalDurationSeconds,
       _this.metrics,
       _this.shadeEvaluation,
+      _this.guidance,
     );
   }
 
   @override
   String toString() {
     final _this = this as RouteCandidateDto;
-    return 'RouteCandidateDto(id: ${_this.id}, mode: ${_this.mode}, geometry: ${_this.geometry}, distanceMeters: ${_this.distanceMeters}, durationSeconds: ${_this.durationSeconds}, additionalDurationSeconds: ${_this.additionalDurationSeconds}, metrics: ${_this.metrics}, shadeEvaluation: ${_this.shadeEvaluation})';
+    return 'RouteCandidateDto(id: ${_this.id}, mode: ${_this.mode}, geometry: ${_this.geometry}, distanceMeters: ${_this.distanceMeters}, durationSeconds: ${_this.durationSeconds}, additionalDurationSeconds: ${_this.additionalDurationSeconds}, metrics: ${_this.metrics}, shadeEvaluation: ${_this.shadeEvaluation}, guidance: ${_this.guidance})';
   }
 }
 
@@ -685,11 +689,13 @@ abstract mixin class $RouteCandidateDtoCopyWith<$Res> {
     @JsonKey(fromJson: _readWholeNumber) int additionalDurationSeconds,
     RouteMetricsDto metrics,
     RouteShadeEvaluationDto? shadeEvaluation,
+    RouteGuidanceDto? guidance,
   });
 
   $RouteGeometryDtoCopyWith<$Res> get geometry;
   $RouteMetricsDtoCopyWith<$Res> get metrics;
   $RouteShadeEvaluationDtoCopyWith<$Res>? get shadeEvaluation;
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -713,6 +719,7 @@ class _$RouteCandidateDtoCopyWithImpl<$Res>
     Object? additionalDurationSeconds = null,
     Object? metrics = null,
     Object? shadeEvaluation = freezed,
+    Object? guidance = freezed,
   }) {
     return _then(
       RouteCandidateDto(
@@ -748,6 +755,10 @@ class _$RouteCandidateDtoCopyWithImpl<$Res>
             ? _self.shadeEvaluation
             : shadeEvaluation // ignore: cast_nullable_to_non_nullable
                   as RouteShadeEvaluationDto?,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidanceDto?,
       ),
     );
   }
@@ -785,6 +796,20 @@ class _$RouteCandidateDtoCopyWithImpl<$Res>
       value,
     ) {
       return _then(_self.copyWith(shadeEvaluation: value));
+    });
+  }
+
+  /// Create a copy of RouteCandidateDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceDtoCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }
@@ -891,6 +916,7 @@ extension RouteCandidateDtoPatterns on RouteCandidateDto {
       @JsonKey(fromJson: _readWholeNumber) int additionalDurationSeconds,
       RouteMetricsDto metrics,
       RouteShadeEvaluationDto? shadeEvaluation,
+      RouteGuidanceDto? guidance,
     )?
     $default, {
     required TResult orElse(),
@@ -907,6 +933,7 @@ extension RouteCandidateDtoPatterns on RouteCandidateDto {
           _that.additionalDurationSeconds,
           _that.metrics,
           _that.shadeEvaluation,
+          _that.guidance,
         );
       case _:
         return orElse();
@@ -937,6 +964,7 @@ extension RouteCandidateDtoPatterns on RouteCandidateDto {
       @JsonKey(fromJson: _readWholeNumber) int additionalDurationSeconds,
       RouteMetricsDto metrics,
       RouteShadeEvaluationDto? shadeEvaluation,
+      RouteGuidanceDto? guidance,
     )
     $default,
   ) {
@@ -952,6 +980,7 @@ extension RouteCandidateDtoPatterns on RouteCandidateDto {
           _that.additionalDurationSeconds,
           _that.metrics,
           _that.shadeEvaluation,
+          _that.guidance,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -981,6 +1010,7 @@ extension RouteCandidateDtoPatterns on RouteCandidateDto {
       @JsonKey(fromJson: _readWholeNumber) int additionalDurationSeconds,
       RouteMetricsDto metrics,
       RouteShadeEvaluationDto? shadeEvaluation,
+      RouteGuidanceDto? guidance,
     )?
     $default,
   ) {
@@ -996,6 +1026,7 @@ extension RouteCandidateDtoPatterns on RouteCandidateDto {
           _that.additionalDurationSeconds,
           _that.metrics,
           _that.shadeEvaluation,
+          _that.guidance,
         );
       case _:
         return null;
@@ -1017,6 +1048,7 @@ class _RouteCandidateDto implements RouteCandidateDto {
     required this.additionalDurationSeconds,
     required this.metrics,
     this.shadeEvaluation,
+    this.guidance,
   });
   factory _RouteCandidateDto.fromJson(Map<String, dynamic> json) =>
       _$RouteCandidateDtoFromJson(json);
@@ -1039,6 +1071,8 @@ class _RouteCandidateDto implements RouteCandidateDto {
   final RouteMetricsDto metrics;
   @override
   final RouteShadeEvaluationDto? shadeEvaluation;
+  @override
+  final RouteGuidanceDto? guidance;
 
   /// Create a copy of RouteCandidateDto
   /// with the given fields replaced by the non-null parameter values.
@@ -1073,7 +1107,9 @@ class _RouteCandidateDto implements RouteCandidateDto {
                 other.additionalDurationSeconds == additionalDurationSeconds) &&
             (identical(other.metrics, metrics) || other.metrics == metrics) &&
             (identical(other.shadeEvaluation, shadeEvaluation) ||
-                other.shadeEvaluation == shadeEvaluation));
+                other.shadeEvaluation == shadeEvaluation) &&
+            (identical(other.guidance, guidance) ||
+                other.guidance == guidance));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1089,12 +1125,13 @@ class _RouteCandidateDto implements RouteCandidateDto {
       additionalDurationSeconds,
       metrics,
       shadeEvaluation,
+      guidance,
     );
   }
 
   @override
   String toString() {
-    return 'RouteCandidateDto(id: $id, mode: $mode, geometry: $geometry, distanceMeters: $distanceMeters, durationSeconds: $durationSeconds, additionalDurationSeconds: $additionalDurationSeconds, metrics: $metrics, shadeEvaluation: $shadeEvaluation)';
+    return 'RouteCandidateDto(id: $id, mode: $mode, geometry: $geometry, distanceMeters: $distanceMeters, durationSeconds: $durationSeconds, additionalDurationSeconds: $additionalDurationSeconds, metrics: $metrics, shadeEvaluation: $shadeEvaluation, guidance: $guidance)';
   }
 }
 
@@ -1116,6 +1153,7 @@ abstract mixin class _$RouteCandidateDtoCopyWith<$Res>
     @JsonKey(fromJson: _readWholeNumber) int additionalDurationSeconds,
     RouteMetricsDto metrics,
     RouteShadeEvaluationDto? shadeEvaluation,
+    RouteGuidanceDto? guidance,
   });
 
   @override
@@ -1124,6 +1162,8 @@ abstract mixin class _$RouteCandidateDtoCopyWith<$Res>
   $RouteMetricsDtoCopyWith<$Res> get metrics;
   @override
   $RouteShadeEvaluationDtoCopyWith<$Res>? get shadeEvaluation;
+  @override
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance;
 }
 
 /// @nodoc
@@ -1147,6 +1187,7 @@ class __$RouteCandidateDtoCopyWithImpl<$Res>
     Object? additionalDurationSeconds = null,
     Object? metrics = null,
     Object? shadeEvaluation = freezed,
+    Object? guidance = freezed,
   }) {
     return _then(
       _RouteCandidateDto(
@@ -1182,6 +1223,10 @@ class __$RouteCandidateDtoCopyWithImpl<$Res>
             ? _self.shadeEvaluation
             : shadeEvaluation // ignore: cast_nullable_to_non_nullable
                   as RouteShadeEvaluationDto?,
+        guidance: freezed == guidance
+            ? _self.guidance
+            : guidance // ignore: cast_nullable_to_non_nullable
+                  as RouteGuidanceDto?,
       ),
     );
   }
@@ -1219,6 +1264,20 @@ class __$RouteCandidateDtoCopyWithImpl<$Res>
       value,
     ) {
       return _then(_self.copyWith(shadeEvaluation: value));
+    });
+  }
+
+  /// Create a copy of RouteCandidateDto
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $RouteGuidanceDtoCopyWith<$Res>? get guidance {
+    if (_self.guidance == null) {
+      return null;
+    }
+
+    return $RouteGuidanceDtoCopyWith<$Res>(_self.guidance!, (value) {
+      return _then(_self.copyWith(guidance: value));
     });
   }
 }
