@@ -146,6 +146,12 @@ MapboxController는 GeoJSON source와 bounds fill/outline·보행망 layer를 �
 
 실제 서버 확인은 `tool/verify_route_predictions.dart`에서 수행한다. 같은 좌표·시각으로 예측 fastest와 shade를 각각 호출하고 평가 시각·보행 그래프 버전·예측 장면 버전·snapping을 비교한다. 고정 수치 확인은 선택 사항이며 데이터 갱신 후에는 일반 동등성 확인만 실행할 수 있다. 2026-10-27에 캡처한 실제 전체 응답은 테스트 fixture이며 앱에서 응답을 고정 반환하는 코드가 아니다.
 
+## 보행 길안내 데이터
+
+일반 도보와 모델 예측의 nullable guidance는 공통 RouteGuidanceDto → RouteGuidanceMapper → RouteGuidance로 변환한다. DTO와 Entity는 route_search의 Data/Domain에 각각 두며, Mapper는 전체 경로의 geometryIndex·좌표·단계 순서·누적 거리·거리/시간 합을 확인한다. shadeSegments의 분할 인덱스를 안내 인덱스로 사용하거나 전체 geometry를 단순화하지 않는다. 누락된 과거 응답은 null, 미지원 status는 unknown, 미지원 maneuver는 방향 없는 unknown으로 유지한다. 횡단 신호등의 true/false/null도 보존한다.
+
+navigation Domain은 route_search Domain의 불변 RouteGuidance만 참조하고, 반대 방향 의존성이나 Presentation/Data 간 직접 참조는 만들지 않는다. HomePage가 선택된 일반/예측 경로의 path·거리·시간·guidance를 NavigationRoute에 전달한다. measureProgress는 원본 segment index와 투영 비율을 보존하고 nextInstruction이 다음 서버 단계와 현재 위치에서의 거리를 계산한다. GuidanceState의 파생 instruction은 약한 GPS·일시 정지·접근 중·이탈 상태와 의심스러운 첫 이탈 위치에서 숨긴다. GuidancePanel은 Domain 값만 관찰하고 서버 instruction을 일반 Text로 표시한다. 신호 설치 정보와 실시간 신호 상태, 길안내 AVAILABLE과 그늘 품질은 별개다.
+
 ## 오류 경계
 
 ```text

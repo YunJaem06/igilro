@@ -94,6 +94,16 @@ PredictedRouteDto/Domain의 shadeSegments에 상태·전체 LineString·from/toD
 
 재현 좌표는 `(127.0374,37.5445)` → `(127.0430,37.5480)`, `2026-10-28T11:00:00+09:00`이다. 2026-10-29 실제 서버에서 fastest 800.7m·572초·31.1%, shade 865.6m·619초·54.6%, 각 4구간을 확인했다. coverage의 1,277개 보행선·7개 출입 지점과 응답의 그래프/장면 버전·평가 시각·snapping도 검증했다. 예시 날짜와 검증값은 테스트 전용이며 사용자가 지정한 시각과 서버의 최신 범위를 사용한다. 과거 15m/좁은 영역 기록 대신 현재 coverage의 값을 따른다.
 
+## 2026-10-31 실제 모델 장면과 길안내 연결
+
+현재 Mac에 실제 브이월드 LoD1 건물 모델 3,064개와 DEM 타일 285개로 장면을 준비했다. 원본 보행 자료는 기존 `data/osm/seoul-forest.osm`의 OSM 시각 `2026-10-09T20:21:04Z`를 유지했다. 기존 준비 스크립트에 bounds `127.0305 37.5385 127.0465 37.5515`와 공개 출입 지점 예시를 전달했으며 합성 건물·연결선을 서비스 자료로 만들지 않았다.
+
+서버의 Git 제외 로컬 설정에 `SHADE_PREDICTION_FILE=data/public-buildings/seoul-forest-app-20261031/scene/scene.json`을 연결했다. 같은 폴더의 `roads.osm` 체크섬을 대조했고 scene SHA-256은 `baa967dd2b5c327d9341d72b37963861c28958bfbf3926ca034ae61d0233bf67`이다. 재기동 후 coverage HTTP 200, 보행선 1,277개·출입 지점 7개를 확인했다. 두 파일과 공급자 키는 Git pull로 전달되지 않으므로 다른 환경에서는 파일 복사 또는 실제 자료 준비·설정이 필요하다. `SHADE_GROUND_VERIFIED_DATASETS`와 기존 직접 높이 건물 DB를 임의로 채우지 않았다.
+
+앱의 실제 Dio·DTO·Mapper·Repository로 고정 시각 예제를 확인했다. fastest는 800.7m·572초·모델 예측 그늘 31.1%·안내 19단계, shade는 865.6m·619초·54.6%·안내 23단계이며 각 4개 색상 구간을 반환했다. physicalShadeCoverage는 계속 null이고 품질은 EXPERIMENTAL_PARTIAL_MODEL이다. 공급자 모델 준비와 실측 그늘 검증을 구분한다.
+
+일반/모델 경로의 `routes[].guidance`를 DTO·Domain·Mapper·NavigationRoute·안내 카드까지 연결했다. 서버의 전체 geometry 인덱스와 누적 거리를 사용하며 원문 instruction, 도로명, 횡단 신호 설치 정보와 metadataStatus를 보존한다. UI는 현재 위치에서 다음 단계까지의 거리를 표시하고, 미지원 status/type을 임의 방향으로 바꾸지 않는다. 홈 장소 선택창도 검색 키에서 debounce를 취소하고 한글 조합 완료 입력을 즉시 제출한다.
+
 ## 연결한 도보 경로 계약
 
 `POST /api/v1/routes/search`
