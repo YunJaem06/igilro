@@ -373,6 +373,53 @@ void main() {
   });
 
   testWidgets(
+    'the compact place sheet search action submits immediately without a duplicate debounce',
+    (tester) async {
+      await mount(tester);
+      await tap(tester, find.byKey(const ValueKey('route-origin')));
+      final repository =
+          container.read(placeRepositoryProvider) as FakePlaceRepository;
+      await tester.enterText(find.byType(TextField), '서울숲');
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(repository.queries, isEmpty);
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pump();
+      expect(repository.queries, ['서울숲']);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(repository.queries, ['서울숲']);
+      Navigator.of(tester.element(find.text('어디서 출발할까요?'))).pop();
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
+    'the compact place sheet commits Korean composition when the search key is submitted',
+    (tester) async {
+      await mount(tester);
+      await tap(tester, find.byKey(const ValueKey('route-origin')));
+      final repository =
+          container.read(placeRepositoryProvider) as FakePlaceRepository;
+      await tester.showKeyboard(find.byType(TextField));
+      tester.testTextInput.updateEditingValue(
+        const TextEditingValue(
+          text: '서울숲',
+          selection: TextSelection.collapsed(offset: 3),
+          composing: TextRange(start: 0, end: 3),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(repository.queries, isEmpty);
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pump();
+      expect(repository.queries, ['서울숲']);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(repository.queries, ['서울숲']);
+      Navigator.of(tester.element(find.text('어디서 출발할까요?'))).pop();
+      await tester.pumpAndSettle();
+    },
+  );
+
+  testWidgets(
     'the compact place sheet defers Korean IME search until composition ends',
     (tester) async {
       await mount(tester);

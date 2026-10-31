@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -79,6 +81,13 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
                 controller: _controller,
                 autofocus: true,
                 maxLength: 100,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) {
+                  FocusScope.of(context).unfocus();
+                  final notifier = ref.read(placeSearchProvider.notifier);
+                  notifier.updateQuery(_controller.text);
+                  unawaited(notifier.search());
+                },
                 decoration: const InputDecoration(
                   hintText: '장소 또는 주소 검색',
                   prefixIcon: Icon(Icons.search),
