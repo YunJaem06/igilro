@@ -234,6 +234,7 @@ class _HomePageState extends ConsumerState<HomePage>
     final single = ref.watch(routePredictionProvider).asData?.value;
     final general = ref.watch(routeSearchProvider).asData?.value;
     final nav = ref.watch(navigationProvider);
+    final locating = ref.watch(locationProvider).isLoading;
     final mapState = ref.watch(mapProvider);
     final showPredictionCoverage =
         kind == RouteSearchKind.prediction && ref.watch(mapConfiguredProvider);
@@ -510,7 +511,11 @@ class _HomePageState extends ConsumerState<HomePage>
                             const SizedBox(height: 8),
                             FloatingActionButton.small(
                               heroTag: 'locate',
-                              onPressed: nav.active ? _follow : _locate,
+                              onPressed: nav.active
+                                  ? _follow
+                                  : locating
+                                  ? null
+                                  : _locate,
                               tooltip: nav.active ? '내 위치 따라가기' : '현재 위치 보기',
                               child: const Icon(Icons.my_location),
                             ),
