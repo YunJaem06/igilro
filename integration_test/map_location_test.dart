@@ -83,6 +83,10 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(HomePage)),
     );
+    // Keep the GPS observation alive independently of which widgets subscribe
+    // while the picker opens and closes.
+    final locationSubscription = container.listen(locationProvider, (_, _) {});
+    addTearDown(locationSubscription.close);
     expect(
       container.read(mapConfiguredProvider),
       true,
@@ -107,7 +111,9 @@ void main() {
     expect(
       fix,
       isNotNull,
-      reason: 'Enable location services, grant permission, and seed a simulator location.',
+      reason:
+          'Enable location services, grant permission, and seed a simulator location. '
+          '${container.read(locationProvider).error}',
     );
     expect(container.read(mapProvider).currentLocation, fix!.coordinate);
     expect(
@@ -208,15 +214,19 @@ void main() {
     await _expectRouteInCamera(nativeMap!, path);
 
     await tester.tap(find.byTooltip('2D로 보기'));
-    await tester.pump(const Duration(seconds: 1));
-    expect((await nativeMap!.getCameraState()).pitch, closeTo(0, 1));
+    await tester.pump();
+    expect(container.read(mapProvider).is3D, false);
+    await _waitForPitch(tester, nativeMap!, 0);
     await tester.tap(find.byTooltip('3D로 보기'));
-    await tester.pump(const Duration(seconds: 1));
-    expect((await nativeMap!.getCameraState()).pitch, closeTo(55, 1));
+    await tester.pump();
+    expect(container.read(mapProvider).is3D, true);
+    await _waitForPitch(tester, nativeMap!, 55);
 
     // Recreating style managers must restore an unchanged route and its pins.
     final readyBeforeReload = styleReadyCount;
-    await nativeMap!.loadStyleURI(MapboxStyles.STANDARD);
+    // Both styles support the basemap configuration used by the surface.
+    // A different URI forces a reload even though Standard is already loaded.
+    await nativeMap!.loadStyleURI(MapboxStyles.STANDARD_SATELLITE);
     await _waitUntil(tester, () => styleReadyCount > readyBeforeReload);
     await tester.pump(const Duration(seconds: 1));
     await _waitForRoute(tester, nativeMap!, visible: true);
@@ -264,6 +274,19 @@ Future<void> _expectRouteInCamera(
       ),
     );
   }
+}
+
+Future<void> _waitForPitch(
+  WidgetTester tester,
+  MapboxMap map,
+  double expected,
+) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 15));
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (((await map.getCameraState()).pitch - expected).abs() < 1) return;
+  }
+  expect((await map.getCameraState()).pitch, closeTo(expected, 1));
 }
 
 Future<void> _waitForRoute(

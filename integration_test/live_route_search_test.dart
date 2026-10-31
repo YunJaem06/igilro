@@ -24,6 +24,8 @@ import 'package:igilro/features/map/presentation/state/map_state.dart';
 import 'package:igilro/features/map/presentation/widgets/mapbox_surface.dart';
 import 'package:igilro/features/route_search/domain/entities/route_search_result.dart';
 import 'package:igilro/features/route_search/domain/entities/route_candidate.dart';
+import 'package:igilro/features/route_search/domain/entities/route_guidance.dart';
+import 'package:igilro/features/navigation/presentation/navigation_notifier.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_notifier.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_search_providers.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_selection_notifier.dart';
@@ -44,6 +46,7 @@ void main() {
     MapboxOptions.setAccessToken(config.mapboxAccessToken);
     MapboxMapsOptions.setLanguage('ko');
     MapboxMap? nativeMap;
+    MapboxMap? readyNativeMap;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -75,7 +78,10 @@ void main() {
                   markers: markers,
                   routePath: path,
                   onCoordinateTapped: onTap,
-                  onReady: ready,
+                  onReady: () {
+                    readyNativeMap = nativeMap;
+                    ready();
+                  },
                   onFailure: failure,
                   onMapCreated: (map) => nativeMap = map,
                 ),
@@ -87,6 +93,8 @@ void main() {
     final container = ProviderScope.containerOf(
       tester.element(find.byType(HomePage)),
     );
+    final locationSubscription = container.listen(locationProvider, (_, _) {});
+    addTearDown(locationSubscription.close);
     final dio = container.read(dioProvider);
     final statuses = <int>[];
     final responseIds = <String>[];
@@ -142,6 +150,8 @@ void main() {
     expect(statuses.last, 200);
     expect(first, isNotNull);
     final route = first!.routes.first;
+    expect(route.guidance?.status, RouteGuidanceStatus.available);
+    expect(route.guidance!.steps.length, greaterThanOrEqualTo(2));
     expect(route.distanceMeters, closeTo(800.8, 0.5));
     expect(route.duration.inSeconds, inInclusiveRange(572, 574));
     expect(route.path.length, greaterThan(2));
@@ -179,13 +189,42 @@ void main() {
         MapboxController.pointFor(coordinate),
       );
       final height = tester.getSize(find.byType(MapWidget)).height;
+      final bottomMargin = (height * 0.25).clamp(0.0, 20.0);
       expect(pixel.y, greaterThanOrEqualTo(height * 0.20));
-      expect(pixel.y, lessThanOrEqualTo(height - 20));
+      expect(pixel.y, lessThanOrEqualTo(height - bottomMargin + 1));
     }
     debugPrint(
       'IGILRO_LIVE_SUCCESS distance=${route.distanceMeters} seconds=${route.duration.inSeconds} points=${route.path.length} requestId=${responseIds.last}',
     );
     await tester.pump(const Duration(seconds: 2));
+
+    final mapBeforePreview = nativeMap;
+    await _tap(tester, find.text('미리보기'));
+    // Guidance changes the panel key and recreates its native map surface.
+    // Observe the ready replacement before using any SDK handle again.
+    await _waitUntil(
+      tester,
+      () =>
+          nativeMap != null &&
+          nativeMap != mapBeforePreview &&
+          identical(readyNativeMap, nativeMap),
+    );
+    await tester.pump();
+    final navigation = container.read(navigationProvider);
+    expect(navigation.isPreview, true);
+    expect(navigation.route!.guidance, route.guidance);
+    expect(navigation.instruction, isNotNull);
+    expect(find.text(navigation.instruction!.step.instruction), findsOneWidget);
+    final previewMap = nativeMap;
+    await _tap(tester, find.text('안내 종료'));
+    await _waitUntil(
+      tester,
+      () =>
+          nativeMap != null &&
+          nativeMap != previewMap &&
+          identical(readyNativeMap, nativeMap),
+    );
+    expect(container.read(navigationProvider).active, false);
 
     // Real server validation, using map-selected coordinates outside its pilot.
     await _selectPoint(
@@ -278,25 +317,61 @@ Future<void> _selectPoint(
   GeoCoordinate coordinate,
 ) async {
   final label = endpoint == RouteEndpoint.origin ? '출발지' : '도착지';
+  final collapsePanel = find.byTooltip('검색 패널 줄이기');
+  if (collapsePanel.evaluate().isNotEmpty) {
+    await _tap(tester, collapsePanel);
+  }
+  // Exact server fixture coordinates use the flat map projection. Native 3D
+  // camera transitions are covered separately by map_location_test.dart.
+  if (container.read(mapProvider).is3D) {
+    await _tap(tester, find.byTooltip('2D로 보기'));
+  }
   await _tap(tester, find.byKey(ValueKey('route-${endpoint.name}')));
   await tester.pump(const Duration(milliseconds: 400));
   await _tap(tester, find.text('지도에서 선택'));
   await tester.pump(const Duration(milliseconds: 400));
   container.read(mapProvider.notifier).framePoints([coordinate]);
-  await tester.pump(const Duration(seconds: 1));
-  final pixel = await map.pixelForCoordinate(
-    MapboxController.pointFor(coordinate),
-  );
-  await map.dispatch('click', pixel);
-  await _waitUntil(tester, () {
+  final cameraDeadline = DateTime.now().add(const Duration(seconds: 15));
+  var centered = false;
+  while (DateTime.now().isBefore(cameraDeadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    final camera = await map.getCameraState();
+    final center = MapboxController.coordinateFor(camera.center)!;
+    if ((center.latitude - coordinate.latitude).abs() < 0.0000001 &&
+        (center.longitude - coordinate.longitude).abs() < 0.0000001 &&
+        camera.pitch.abs() < 1) {
+      centered = true;
+      break;
+    }
+  }
+  expect(centered, true, reason: 'Native selection camera did not settle.');
+  // Opening/closing the keyboard resizes the native map after Flutter layout.
+  // Reproject the native tap until the committed candidate matches the fixture.
+  final selectionDeadline = DateTime.now().add(const Duration(seconds: 15));
+  var selected = false;
+  while (DateTime.now().isBefore(selectionDeadline)) {
+    final pixel = await map.pixelForCoordinate(
+      MapboxController.pointFor(coordinate),
+    );
+    await map.dispatch('click', pixel);
+    await tester.pump(const Duration(milliseconds: 100));
     final candidate = container
         .read(routeSelectionProvider)
         .candidate
         ?.coordinate;
-    return candidate != null &&
+    selected =
+        candidate != null &&
         (candidate.latitude - coordinate.latitude).abs() < 0.000001 &&
         (candidate.longitude - coordinate.longitude).abs() < 0.000001;
-  });
+    if (selected) break;
+  }
+  expect(
+    selected,
+    true,
+    reason:
+        'Native tap did not select $coordinate; '
+        'candidate=${container.read(routeSelectionProvider).candidate?.coordinate}',
+  );
   await tester.pump(const Duration(milliseconds: 300));
   await _tap(tester, find.text('$label로 선택'));
   expect(container.read(routeSelectionProvider).selecting, isNull);
@@ -370,7 +445,8 @@ Future<void> _waitForCameraIncludes(
   MapboxMap map,
   List<GeoCoordinate> points,
 ) async {
-  for (var attempt = 0; attempt < 40; attempt++) {
+  final deadline = DateTime.now().add(const Duration(seconds: 10));
+  while (DateTime.now().isBefore(deadline)) {
     final camera = await map.getCameraState();
     final bounds = await map.coordinateBoundsForCamera(
       CameraOptions(
@@ -389,11 +465,16 @@ Future<void> _waitForCameraIncludes(
           point.longitude <= bounds.northeast.coordinates.lng,
     )) {
       final size = tester.getSize(find.byType(MapWidget));
+      // The controller caps bottom padding at 25% in a very short viewport.
+      // Native projection/layout rounding can differ by a logical pixel.
+      final bottomMargin = (size.height * 0.25).clamp(0.0, 20.0);
       final pixels = await map.pixelsForCoordinates(
         points.map(MapboxController.pointFor).toList(growable: false),
       );
       if (pixels.every(
-        (pixel) => pixel.y >= size.height * 0.20 && pixel.y <= size.height - 20,
+        (pixel) =>
+            pixel.y >= size.height * 0.20 &&
+            pixel.y <= size.height - bottomMargin + 1,
       )) {
         return;
       }

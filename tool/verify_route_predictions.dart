@@ -8,6 +8,7 @@ import 'package:igilro/core/geo/geo_coordinate.dart';
 import 'package:igilro/core/network/dio_client.dart';
 import 'package:igilro/features/route_search/domain/entities/model_route_prediction.dart';
 import 'package:igilro/features/route_search/domain/entities/prediction_coverage.dart';
+import 'package:igilro/features/route_search/domain/entities/route_guidance.dart';
 
 /// Explicit live smoke test; never runs as part of offline unit/widget tests.
 Future<void> main(List<String> args) async {
@@ -69,6 +70,11 @@ Future<void> main(List<String> args) async {
     for (final result in results) {
       final route = result.routes.single;
       _check(route.shadeSegments.isNotEmpty, 'server shade segments');
+      _check(
+        route.guidance?.status == RouteGuidanceStatus.available &&
+            route.guidance!.steps.length >= 2,
+        'server walking guidance',
+      );
       _check(
         (route.shadeSegments.last.toDistanceMeters - route.distanceMeters)
                 .abs() <=
@@ -144,6 +150,7 @@ Future<void> main(List<String> args) async {
                   result.routes.single.prediction.physicalShadeCoverage,
               'vertexCount': result.routes.single.path.length,
               'shadeSegmentCount': result.routes.single.shadeSegments.length,
+              'guidanceStepCount': result.routes.single.guidance!.steps.length,
             },
         ],
       }),
