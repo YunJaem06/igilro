@@ -380,6 +380,11 @@ class _HomePageState extends ConsumerState<HomePage>
       _frame();
     });
     ref.listen(navigationProvider, (previous, next) {
+      if (next.status == GuidanceStatus.arrived &&
+          previous?.status != GuidanceStatus.arrived) {
+        _clearInspection();
+        _frame();
+      }
       if (!next.active) {
         ref.read(mapProvider.notifier).stopFollowing();
         if (previous?.isPreview == true) {

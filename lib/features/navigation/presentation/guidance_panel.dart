@@ -5,6 +5,8 @@ import '../../../core/error/failure.dart';
 import '../../route_search/domain/entities/route_guidance.dart';
 import 'navigation_notifier.dart';
 import 'guidance_instruction_card.dart';
+import 'guidance_time_card.dart';
+import 'arrival_summary_card.dart';
 
 class GuidancePanel extends ConsumerWidget {
   const GuidancePanel({
@@ -20,6 +22,15 @@ class GuidancePanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(navigationProvider);
     final notifier = ref.read(navigationProvider.notifier);
+    if (state.status == GuidanceStatus.arrived && state.route != null) {
+      return ArrivalSummaryCard(
+        route: state.route!,
+        session: state.session,
+        isPreview: state.isPreview,
+        onDone: notifier.stop,
+        onShowGuidance: onShowGuidance,
+      );
+    }
     final text = state.isPreview
         ? state.status == GuidanceStatus.arrived
               ? '경로 미리보기가 끝났어요'
@@ -43,6 +54,7 @@ class GuidancePanel extends ConsumerWidget {
           };
     final remaining = state.progress?.remainingMeters;
     final instruction = state.instruction;
+    final estimate = state.timeEstimate;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -56,6 +68,8 @@ class GuidancePanel extends ConsumerWidget {
             ),
           ],
         ),
+        if (estimate != null)
+          GuidanceTimeCard(estimate: estimate, isPreview: state.isPreview),
         if (instruction != null)
           GuidanceInstructionCard(
             instruction: instruction,
@@ -69,11 +83,7 @@ class GuidancePanel extends ConsumerWidget {
                 : '단계별 안내 정보가 없어 경로 진행 상황만 표시해요.',
           ),
         ],
-        if (remaining != null &&
-            {
-              GuidanceStatus.following,
-              GuidanceStatus.arrived,
-            }.contains(state.status)) ...[
+        if (remaining != null && state.hasReliableProgress) ...[
           const SizedBox(height: 8),
           Text(
             remaining < 1000
