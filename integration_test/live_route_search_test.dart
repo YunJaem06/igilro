@@ -22,6 +22,7 @@ import 'package:igilro/features/map/presentation/adapters/mapbox_controller.dart
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_state.dart';
 import 'package:igilro/features/map/presentation/widgets/mapbox_surface.dart';
+import 'package:igilro/features/map/presentation/widgets/map_canvas.dart';
 import 'package:igilro/features/route_search/domain/entities/route_search_result.dart';
 import 'package:igilro/features/route_search/domain/entities/route_candidate.dart';
 import 'package:igilro/features/route_search/domain/entities/route_guidance.dart';
@@ -72,18 +73,23 @@ void main() {
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           home: HomePage(
             mapSurfaceBuilder: (state, markers, path, onTap, ready, failure) =>
-                MapboxSurface(
-                  key: ValueKey(state.session),
-                  state: state,
-                  markers: markers,
-                  routePath: path,
-                  onCoordinateTapped: onTap,
-                  onReady: () {
-                    readyNativeMap = nativeMap;
-                    ready();
-                  },
-                  onFailure: failure,
-                  onMapCreated: (map) => nativeMap = map,
+                Builder(
+                  builder: (context) => MapboxSurface(
+                    key: ValueKey(state.session),
+                    state: state,
+                    markers: markers,
+                    routePath: path,
+                    guidancePoints: context
+                        .findAncestorWidgetOfExactType<MapCanvas>()!
+                        .guidancePoints,
+                    onCoordinateTapped: onTap,
+                    onReady: () {
+                      readyNativeMap = nativeMap;
+                      ready();
+                    },
+                    onFailure: failure,
+                    onMapCreated: (map) => nativeMap = map,
+                  ),
                 ),
           ),
         ),
@@ -198,6 +204,36 @@ void main() {
     );
     await tester.pump(const Duration(seconds: 2));
 
+    // Select an actual server step and verify both the native camera and the
+    // rendered guidance layer, while preserving the device location.
+    await _tap(tester, find.text('전체 길안내'));
+    await tester.pump(const Duration(milliseconds: 400));
+    const selectedIndex = 5;
+    final selectedTile = find.byKey(
+      const ValueKey('guidance-step-$selectedIndex'),
+    );
+    await tester.scrollUntilVisible(
+      selectedTile,
+      200,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('guidance-steps-list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pump();
+    final gpsBefore = container.read(mapProvider).currentLocation;
+    await _tap(tester, selectedTile);
+    await _waitForCameraCenter(
+      tester,
+      nativeMap!,
+      route.guidance!.steps[selectedIndex].coordinate,
+    );
+    expect(container.read(mapProvider).currentLocation, gpsBefore);
+    await _expectGuidanceVisibility(tester, nativeMap!, visible: true);
+    await _tap(tester, find.byTooltip('전체 경로 보기'));
+    await _expectGuidanceVisibility(tester, nativeMap!, visible: false);
+    debugPrint('IGILRO_GUIDANCE_MAP_INSPECTION');
+
     final mapBeforePreview = nativeMap;
     await _tap(tester, find.text('미리보기'));
     // Guidance changes the panel key and recreates its native map surface.
@@ -215,6 +251,7 @@ void main() {
     expect(navigation.route!.guidance, route.guidance);
     expect(navigation.instruction, isNotNull);
     expect(find.text(navigation.instruction!.step.instruction), findsOneWidget);
+    await _expectGuidanceVisibility(tester, nativeMap!, visible: true);
     final previewMap = nativeMap;
     await _tap(tester, find.text('안내 종료'));
     await _waitUntil(
@@ -305,6 +342,7 @@ void main() {
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
+  await tester.pump();
   await tester.tap(finder);
   await tester.pump();
 }
@@ -505,6 +543,48 @@ Future<void> _expectRouteVisibility(
     if (features.isNotEmpty == visible) return;
   }
   fail('Expected native route visibility: $visible');
+}
+
+Future<void> _waitForCameraCenter(
+  WidgetTester tester,
+  MapboxMap map,
+  GeoCoordinate target,
+) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 15));
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 100));
+    final center = MapboxController.coordinateFor(
+      (await map.getCameraState()).center,
+    )!;
+    if ((center.latitude - target.latitude).abs() < .000001 &&
+        (center.longitude - target.longitude).abs() < .000001) {
+      return;
+    }
+  }
+  fail('Native guidance selection camera did not settle.');
+}
+
+Future<void> _expectGuidanceVisibility(
+  WidgetTester tester,
+  MapboxMap map, {
+  required bool visible,
+}) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 20));
+  while (DateTime.now().isBefore(deadline)) {
+    await tester.pump(const Duration(milliseconds: 200));
+    final size = tester.getSize(find.byType(MapWidget));
+    final features = await map.queryRenderedFeatures(
+      RenderedQueryGeometry.fromScreenBox(
+        ScreenBox(
+          min: ScreenCoordinate(x: 0, y: 0),
+          max: ScreenCoordinate(x: size.width, y: size.height),
+        ),
+      ),
+      RenderedQueryOptions(layerIds: [MapboxController.guidancePointsId]),
+    );
+    if (features.isNotEmpty == visible) return;
+  }
+  fail('Expected native guidance point visibility: $visible');
 }
 
 Future<void> _waitUntil(WidgetTester tester, bool Function() complete) async {

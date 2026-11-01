@@ -20,6 +20,87 @@ import '../../helpers/fake_prediction_repository.dart';
 
 void main() {
   testWidgets(
+    'guidance points preserve GPS, cache equal updates, restore after style reload and clear on route change',
+    (tester) async {
+      await tester.runAsync(() async {
+        final native = _Map();
+        final controller = MapboxController(MapboxMap(native));
+        addTearDown(controller.dispose);
+        final points = [
+          MapGuidancePoint(
+            coordinate: forestOrigin,
+            role: MapGuidancePointRole.current,
+            label: '현재 1',
+          ),
+          MapGuidancePoint(
+            coordinate: forestDestination,
+            role: MapGuidancePointRole.next,
+            label: '다음 2',
+          ),
+        ];
+        Future<void> apply(List<MapGuidancePoint> values) => controller.apply(
+          const MapState(currentLocation: forestOrigin),
+          [],
+          guidancePoints: values,
+          moveCamera: false,
+          viewportSize: const ui.Size(500, 500),
+        );
+        await controller.initialize();
+        await apply(points);
+        final circles =
+            native.annotations.circles[MapboxController.guidancePointsId]!;
+        final labels =
+            native.annotations.points[MapboxController.guidanceLabelsId]!;
+        final location = native.annotations.circles.entries
+            .singleWhere((e) => e.key.startsWith('circle-'))
+            .value;
+        expect(circles.options.map((o) => o.circleColor), [
+          0xFF23785C,
+          0xFF4268C5,
+        ]);
+        expect(labels.options.map((o) => o.textField), ['현재 1', '다음 2']);
+        expect(
+          location.options.single.geometry.coordinates.lng,
+          forestOrigin.longitude,
+        );
+        final writes = circles.writes;
+        await apply(points.map((p) => p.copyWith()).toList());
+        expect(circles.writes, writes);
+        final selected = [
+          points.first,
+          points.last.copyWith(
+            role: MapGuidancePointRole.selected,
+            label: '다음·선택 2',
+          ),
+        ];
+        await apply(selected);
+        expect(circles.options.last.circleColor, 0xFFE28A20);
+        expect(location.writes, 1);
+        await controller.initialize();
+        await apply(selected);
+        final restored =
+            native.annotations.circles[MapboxController.guidancePointsId]!;
+        expect(restored, isNot(same(circles)));
+        expect(restored.options, hasLength(2));
+        expect(
+          native
+              .annotations
+              .points[MapboxController.guidanceLabelsId]!
+              .options
+              .last
+              .textField,
+          '다음·선택 2',
+        );
+        await apply([]);
+        expect(restored.options, isEmpty);
+        expect(
+          native.annotations.points[MapboxController.guidanceLabelsId]!.options,
+          isEmpty,
+        );
+      });
+    },
+  );
+  testWidgets(
     'disposing during source initialization stops later SDK operations',
     (tester) async {
       await tester.runAsync(() async {
@@ -281,6 +362,7 @@ class _Annotations extends Fake
     implements platform.AnnotationManagerPlatformInterface {
   final lines = <String, _Lines>{};
   final points = <String, _Points>{};
+  final circles = <String, _Circles>{};
   final order = <String>[];
   @override
   Future<platform.PolylineAnnotationManagerPlatformInterface>
@@ -303,12 +385,13 @@ class _Annotations extends Fake
   createCircleAnnotationManager({String? id, String? below}) async {
     final key = id ?? 'circle-${order.length}';
     order.add(key);
-    return _Circles(key);
+    return circles[key] = _Circles(key);
   }
 
   @override
   Future<void> removeAnnotationManagerById(String id) async {
     lines.remove(id);
+    circles.remove(id);
     await points.remove(id)?.taps.close();
     order.remove(id);
   }
@@ -381,13 +464,21 @@ class _Circles extends Fake
   _Circles(this.id);
   @override
   final String id;
+  final options = <CircleAnnotationOptions>[];
+  int writes = 0;
+  @override
+  Future<CircleAnnotation> create(CircleAnnotationOptions value) async {
+    options.add(value);
+    writes++;
+    return CircleAnnotation(id: '$id-$writes', geometry: value.geometry);
+  }
+
   @override
   Future<List<CircleAnnotation?>> createMulti(
     List<CircleAnnotationOptions> values,
-  ) async => [
-    for (var i = 0; i < values.length; i++)
-      CircleAnnotation(id: '$id-$i', geometry: values[i].geometry),
-  ];
+  ) async => [for (final value in values) await create(value)];
   @override
-  Future<void> deleteAll() async {}
+  Future<void> deleteAll() async {
+    options.clear();
+  }
 }

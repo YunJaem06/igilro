@@ -8,6 +8,9 @@ import 'package:igilro/app/bootstrap.dart';
 import 'package:igilro/app/pages/home_page.dart';
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_state.dart';
+import 'package:igilro/features/map/presentation/state/map_overlays.dart';
+import 'package:igilro/features/map/presentation/widgets/map_canvas.dart';
+import 'package:igilro/features/navigation/presentation/guidance_steps_sheet.dart';
 import 'package:igilro/features/navigation/presentation/navigation_notifier.dart';
 import 'package:igilro/features/route_search/domain/entities/model_route_prediction.dart';
 import 'package:igilro/features/route_search/domain/entities/route_guidance.dart';
@@ -71,11 +74,50 @@ void main() {
           find.text(mode == RoutePredictionMode.shade ? '그늘 많은 길' : '빠른 길'),
         );
         expect(container.read(routePredictionOptionsProvider).mode, mode);
+        await _tap(tester, find.text('전체 길안내'));
+        await tester.pump(const Duration(milliseconds: 400));
+        final inspectIndex = route.guidance!.steps.length ~/ 2;
+        final tile = find.byKey(ValueKey('guidance-step-$inspectIndex'));
+        await tester.scrollUntilVisible(
+          tile,
+          200,
+          scrollable: find.descendant(
+            of: find.byKey(const Key('guidance-steps-list')),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+        final gpsBefore = container.read(mapProvider).currentLocation;
+        await _tap(tester, tile);
+        await tester.pump(const Duration(seconds: 1));
+        expect(find.byType(GuidanceStepsSheet), findsNothing);
+        expect(
+          container.read(mapProvider).center,
+          route.guidance!.steps[inspectIndex].coordinate,
+        );
+        expect(container.read(mapProvider).currentLocation, gpsBefore);
+        expect(
+          tester
+              .widget<MapCanvas>(find.byType(MapCanvas))
+              .guidancePoints
+              .single
+              .role,
+          MapGuidancePointRole.selected,
+        );
+        await _tap(tester, find.byTooltip('전체 경로 보기'));
+        expect(
+          tester.widget<MapCanvas>(find.byType(MapCanvas)).guidancePoints,
+          isEmpty,
+        );
         await _tap(tester, find.text('미리보기'));
         final navigation = container.read(navigationProvider);
         expect(navigation.isPreview, true);
         expect(navigation.route!.guidance, route.guidance);
         expect(navigation.instruction, isNotNull);
+        expect(
+          tester.widget<MapCanvas>(find.byType(MapCanvas)).guidancePoints,
+          hasLength(2),
+        );
         expect(find.text('경로 미리보기 · 가상 이동'), findsOneWidget);
         expect(
           find.text(navigation.instruction!.step.instruction),
@@ -95,6 +137,7 @@ void main() {
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
+  await tester.pump();
   await tester.tap(finder);
   await tester.pump();
 }
