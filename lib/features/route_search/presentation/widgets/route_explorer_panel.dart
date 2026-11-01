@@ -20,10 +20,12 @@ class RouteExplorerPanel extends ConsumerWidget {
     required this.onStart,
     required this.onPreview,
     this.onShowCoverage,
+    this.onShowGuidance,
   });
   final VoidCallback onStart;
   final VoidCallback onPreview;
   final VoidCallback? onShowCoverage;
+  final VoidCallback? onShowGuidance;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -204,6 +206,12 @@ class RouteExplorerPanel extends ConsumerWidget {
                   : '출발지와 도착지를 선택해 주세요.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+          ),
+        if (hasResult && !loading && onShowGuidance != null)
+          OutlinedButton.icon(
+            onPressed: onShowGuidance,
+            icon: const Icon(Icons.format_list_numbered),
+            label: const Text('전체 길안내'),
           ),
       ],
     );
@@ -388,7 +396,7 @@ class RouteExplorerPanel extends ConsumerWidget {
         context: context,
         showDragHandle: true,
         isScrollControlled: true,
-        builder: (_) => SafeArea(
+        builder: (sheetContext) => SafeArea(
           child: SizedBox(
             height: MediaQuery.sizeOf(context).height * 0.65,
             child: ListView(
@@ -396,6 +404,15 @@ class RouteExplorerPanel extends ConsumerWidget {
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 16),
+                if (onShowGuidance != null)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      onShowGuidance!();
+                    },
+                    icon: const Icon(Icons.format_list_numbered),
+                    label: const Text('전체 길안내'),
+                  ),
                 for (final child in children)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),

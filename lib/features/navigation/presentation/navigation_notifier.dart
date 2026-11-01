@@ -40,6 +40,15 @@ final class GuidanceState {
   final Failure? failure;
   final bool isPreview;
   bool get active => route != null;
+  NavigationStepProgress? get stepProgress {
+    if (route == null || progress == null) return null;
+    if (status == GuidanceStatus.arrived) {
+      return measureGuidanceSteps(route!, progress!, arrived: true);
+    }
+    if (instruction == null) return null;
+    return measureGuidanceSteps(route!, progress!);
+  }
+
   NavigationInstruction? get instruction {
     if (status != GuidanceStatus.following ||
         route == null ||

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../route_search/domain/entities/route_guidance.dart';
 import '../domain/navigation_progress.dart';
+import 'guidance_maneuver_icon.dart';
 
 class GuidanceInstructionCard extends StatelessWidget {
   const GuidanceInstructionCard({
@@ -27,7 +28,7 @@ class GuidanceInstructionCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(_icon(step.type), size: 32),
+          Icon(guidanceManeuverIcon(step.type), size: 32),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -69,18 +70,4 @@ class GuidanceInstructionCard extends StatelessWidget {
       ),
     );
   }
-
-  IconData _icon(ManeuverType type) => switch (type) {
-    ManeuverType.depart => Icons.directions_walk,
-    ManeuverType.continueStraight => Icons.straight,
-    ManeuverType.keepLeft => Icons.turn_slight_left,
-    ManeuverType.keepRight => Icons.turn_slight_right,
-    ManeuverType.turnLeft => Icons.turn_left,
-    ManeuverType.turnRight => Icons.turn_right,
-    ManeuverType.uTurn => Icons.u_turn_left,
-    ManeuverType.crossing => Icons.directions_walk,
-    ManeuverType.stairs => Icons.stairs,
-    ManeuverType.arrive => Icons.flag,
-    ManeuverType.unknown => Icons.info_outline,
-  };
 }

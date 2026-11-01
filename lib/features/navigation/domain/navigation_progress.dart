@@ -45,6 +45,34 @@ final class NavigationInstruction {
   final double distanceMeters;
 }
 
+final class NavigationStepProgress {
+  const NavigationStepProgress({required this.currentIndex, this.nextIndex});
+  final int currentIndex;
+  final int? nextIndex;
+}
+
+NavigationStepProgress? measureGuidanceSteps(
+  NavigationRoute route,
+  NavigationProgress progress, {
+  bool arrived = false,
+}) {
+  final guide = route.guidance;
+  if (guide == null ||
+      guide.status != RouteGuidanceStatus.available ||
+      guide.steps.length < 2) {
+    return null;
+  }
+  if (arrived) {
+    return NavigationStepProgress(currentIndex: guide.steps.last.index);
+  }
+  final next = nextInstruction(route, progress);
+  if (next == null) return null;
+  return NavigationStepProgress(
+    currentIndex: math.max(0, next.step.index - 1),
+    nextIndex: next.step.index,
+  );
+}
+
 NavigationInstruction? nextInstruction(
   NavigationRoute route,
   NavigationProgress progress,

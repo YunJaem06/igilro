@@ -58,6 +58,16 @@ class MapNotifier extends _$MapNotifier {
     cameraRevision: state.cameraRevision + 1,
   );
 
+  /// Inspect a route point without replacing the user's actual GPS location.
+  void inspectCoordinate(GeoCoordinate coordinate) => state = state.copyWith(
+    center: coordinate,
+    framedCoordinates: const [],
+    followLocation: false,
+    bearing: 0,
+    zoom: 18,
+    cameraRevision: state.cameraRevision + 1,
+  );
+
   void framePoints(List<GeoCoordinate> coordinates, {GeoCoordinate? center}) {
     final points = coordinates.toSet().toList(growable: false);
     if (points.isEmpty) return;

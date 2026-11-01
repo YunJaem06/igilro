@@ -25,6 +25,7 @@ class MapCanvas extends ConsumerWidget {
     this.routePath = const [],
     this.alternativeRoutePath = const [],
     this.routeSegments = const [],
+    this.guidancePoints = const [],
     this.coverage,
     this.onAccessPointTapped,
     this.onCoordinateTapped,
@@ -36,6 +37,7 @@ class MapCanvas extends ConsumerWidget {
   final List<GeoCoordinate> routePath;
   final List<GeoCoordinate> alternativeRoutePath;
   final List<MapRouteSegment> routeSegments;
+  final List<MapGuidancePoint> guidancePoints;
   final MapCoverage? coverage;
   final ValueChanged<MapAccessPoint>? onAccessPointTapped;
   final ValueChanged<GeoCoordinate>? onCoordinateTapped;
@@ -63,6 +65,7 @@ class MapCanvas extends ConsumerWidget {
           routePath: routePath,
           alternativeRoutePath: alternativeRoutePath,
           routeSegments: routeSegments,
+          guidancePoints: guidancePoints,
           coverage: coverage,
           onAccessPointTapped: onAccessPointTapped,
           onCoordinateTapped: state.status == MapLoadStatus.ready

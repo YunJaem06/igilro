@@ -11,9 +11,11 @@ class GuidancePanel extends ConsumerWidget {
     super.key,
     required this.onFollow,
     required this.onReroute,
+    this.onShowGuidance,
   });
   final VoidCallback onFollow;
   final VoidCallback? onReroute;
+  final VoidCallback? onShowGuidance;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(navigationProvider);
@@ -83,6 +85,12 @@ class GuidancePanel extends ConsumerWidget {
           LinearProgressIndicator(value: state.progress!.fraction),
         ],
         const SizedBox(height: 12),
+        if (onShowGuidance != null)
+          OutlinedButton.icon(
+            onPressed: onShowGuidance,
+            icon: const Icon(Icons.format_list_numbered),
+            label: const Text('전체 길안내'),
+          ),
         Row(
           children: [
             Expanded(

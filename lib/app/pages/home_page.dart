@@ -13,6 +13,10 @@ import '../../features/map/presentation/widgets/map_canvas.dart';
 import '../../features/navigation/domain/navigation_progress.dart';
 import '../../features/navigation/presentation/navigation_notifier.dart';
 import '../../features/navigation/presentation/guidance_panel.dart';
+import '../../features/navigation/presentation/guidance_selection_notifier.dart';
+import '../../features/navigation/presentation/guidance_steps_sheet.dart';
+import '../../features/navigation/presentation/guidance_map_inspection_card.dart';
+import '../../features/route_search/domain/entities/route_guidance.dart';
 import '../../features/route_search/domain/entities/model_route_prediction.dart';
 import '../../features/route_search/domain/entities/route_point.dart';
 import '../../features/route_search/presentation/providers/prediction_coverage_notifier.dart';
@@ -25,6 +29,8 @@ import '../../features/route_search/presentation/providers/route_search_kind_not
 import '../../features/route_search/presentation/state/route_selection_state.dart';
 import '../../features/route_search/presentation/widgets/route_explorer_panel.dart';
 import '../debug/prediction_pilot_button.dart';
+import '../guidance/active_route_provider.dart';
+import '../guidance/guidance_map_points.dart';
 import '../widgets/route_input_bar.dart';
 import '../widgets/prediction_coverage_control.dart';
 import '../widgets/map_search_sheet.dart';
@@ -68,27 +74,59 @@ class _HomePageState extends ConsumerState<HomePage>
         ref.read(routePredictionProvider).asData?.value;
   }
 
-  NavigationRoute? _route() {
-    if (ref.read(routeSearchKindProvider) == RouteSearchKind.prediction) {
-      final route = _prediction()?.routes.first;
-      return route == null
-          ? null
-          : NavigationRoute(
-              path: route.path,
-              distanceMeters: route.distanceMeters,
-              duration: route.duration,
-              guidance: route.guidance,
-            );
+  NavigationRoute? _route() => ref.read(activeRouteProvider)?.navigation;
+
+  void _clearInspection() {
+    final active = ref.read(activeRouteProvider);
+    final guidance = active?.navigation.guidance;
+    if (active != null && guidance != null) {
+      ref
+          .read(
+            guidanceSelectionProvider(guidance, routeKey: active.key).notifier,
+          )
+          .clear();
     }
-    final route = ref.read(routeSearchProvider).asData?.value?.routes.first;
-    return route == null
-        ? null
-        : NavigationRoute(
-            path: route.path,
-            distanceMeters: route.distanceMeters,
-            duration: route.duration,
-            guidance: route.guidance,
-          );
+  }
+
+  void _showWholeRoute() {
+    _clearInspection();
+    _frame();
+  }
+
+  void _showGuidanceSteps() {
+    final active = ref.read(activeRouteProvider);
+    final guidance = active?.navigation.guidance;
+    if (active == null || guidance?.status != RouteGuidanceStatus.available) {
+      return;
+    }
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => GuidanceStepsSheet(
+        routeKey: active.key,
+        guidance: guidance!,
+        onInspect: (step) {
+          if (!mounted || ref.read(activeRouteProvider)?.key != active.key) {
+            return;
+          }
+          ref
+              .read(
+                guidanceSelectionProvider(
+                  guidance,
+                  routeKey: active.key,
+                ).notifier,
+              )
+              .selectStep(step.index);
+          ref.read(mapProvider.notifier).inspectCoordinate(step.coordinate);
+        },
+        onShowWholeRoute: () {
+          if (mounted && ref.read(activeRouteProvider)?.key == active.key) {
+            _showWholeRoute();
+          }
+        },
+      ),
+    );
   }
 
   void _frame() {
@@ -123,6 +161,7 @@ class _HomePageState extends ConsumerState<HomePage>
   void _start({bool preview = false}) {
     final route = _route();
     if (route == null) return;
+    _clearInspection();
     ref.read(mapProvider.notifier).beginFollowing();
     final nav = ref.read(navigationProvider.notifier);
     if (preview) {
@@ -133,6 +172,7 @@ class _HomePageState extends ConsumerState<HomePage>
   }
 
   void _follow() {
+    _clearInspection();
     ref.read(mapProvider.notifier).beginFollowing();
     final state = ref.read(navigationProvider);
     if (state.fix != null && state.status != GuidanceStatus.weakGps) {
@@ -236,6 +276,17 @@ class _HomePageState extends ConsumerState<HomePage>
     final single = ref.watch(routePredictionProvider).asData?.value;
     final general = ref.watch(routeSearchProvider).asData?.value;
     final nav = ref.watch(navigationProvider);
+    final active = ref.watch(activeRouteProvider);
+    final guidance = active?.navigation.guidance;
+    final hasGuidance = guidance?.status == RouteGuidanceStatus.available;
+    final selectedStep = active != null && hasGuidance
+        ? ref.watch(guidanceSelectionProvider(guidance!, routeKey: active.key))
+        : null;
+    final guidancePoints = guidanceMapPoints(
+      guidance,
+      progress: nav.route?.guidance == guidance ? nav.stepProgress : null,
+      selectedIndex: selectedStep,
+    );
     final locating = ref.watch(locationProvider).isLoading;
     final mapState = ref.watch(mapProvider);
     final showPredictionCoverage =
@@ -370,7 +421,7 @@ class _HomePageState extends ConsumerState<HomePage>
         actions: [
           IconButton(
             onPressed: path.isNotEmpty || selection.endpoints.canSearch
-                ? _frame
+                ? _showWholeRoute
                 : null,
             icon: const Icon(Icons.fit_screen_rounded),
             tooltip: '전체 경로 보기',
@@ -442,6 +493,7 @@ class _HomePageState extends ConsumerState<HomePage>
                           routePath: path,
                           alternativeRoutePath: alternative,
                           routeSegments: routeSegments,
+                          guidancePoints: guidancePoints,
                           coverage: mapCoverage,
                           onAccessPointTapped: nav.active
                               ? null
@@ -475,7 +527,9 @@ class _HomePageState extends ConsumerState<HomePage>
                                     .preview,
                         ),
                       ),
-                      if (showPredictionCoverage && !nav.active)
+                      if (showPredictionCoverage &&
+                          !nav.active &&
+                          selectedStep == null)
                         Positioned(
                           left: 12,
                           bottom: 12,
@@ -495,6 +549,17 @@ class _HomePageState extends ConsumerState<HomePage>
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: ShadeLegend(),
+                          ),
+                        ),
+                      if (selectedStep != null && guidance != null)
+                        Positioned(
+                          left: 8,
+                          bottom: 36,
+                          right: 8,
+                          child: GuidanceMapInspectionCard(
+                            step: guidance.steps[selectedStep],
+                            onOpenList: _showGuidanceSteps,
+                            onClear: _showWholeRoute,
                           ),
                         ),
                       Positioned(
@@ -532,6 +597,9 @@ class _HomePageState extends ConsumerState<HomePage>
                         ? SingleChildScrollView(
                             child: GuidancePanel(
                               onFollow: _follow,
+                              onShowGuidance: hasGuidance
+                                  ? _showGuidanceSteps
+                                  : null,
                               onReroute: nav.fix == null || nav.isPreview
                                   ? null
                                   : () {
@@ -564,6 +632,9 @@ class _HomePageState extends ConsumerState<HomePage>
                             onStart: () => _start(),
                             onPreview: () => _start(preview: true),
                             onShowCoverage: _showCoverage,
+                            onShowGuidance: hasGuidance
+                                ? _showGuidanceSteps
+                                : null,
                           ),
                   ),
                 ),

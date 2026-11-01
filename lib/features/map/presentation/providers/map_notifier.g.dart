@@ -85,7 +85,7 @@ final class MapNotifierProvider
   }
 }
 
-String _$mapNotifierHash() => r'82b18d8b938db57bbd0bae4ba26c12e1bea1069e';
+String _$mapNotifierHash() => r'd2ebf4652245c984716893c4a0678c5a63dec42e';
 
 abstract class _$MapNotifier extends $Notifier<MapState> {
   MapState build();

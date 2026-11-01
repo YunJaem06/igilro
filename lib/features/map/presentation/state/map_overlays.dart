@@ -6,6 +6,17 @@ part 'map_overlays.freezed.dart';
 
 enum MapShadeState { shade, sunlight }
 
+enum MapGuidancePointRole { current, next, selected }
+
+@freezed
+abstract class MapGuidancePoint with _$MapGuidancePoint {
+  const factory MapGuidancePoint({
+    required GeoCoordinate coordinate,
+    required MapGuidancePointRole role,
+    required String label,
+  }) = _MapGuidancePoint;
+}
+
 @freezed
 abstract class MapRouteSegment with _$MapRouteSegment {
   const factory MapRouteSegment({

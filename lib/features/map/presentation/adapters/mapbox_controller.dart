@@ -23,6 +23,8 @@ final class MapboxController {
   static const coverageSourceId = 'igilro.coverage';
   static const networkLayerId = 'igilro.walking-network';
   static const boundsLayerId = 'igilro.coverage-bounds';
+  static const guidancePointsId = 'igilro.guidance-points';
+  static const guidanceLabelsId = 'igilro.guidance-labels';
 
   final MapboxMap _map;
   PolylineAnnotationManager? _routes;
@@ -36,6 +38,9 @@ final class MapboxController {
   CircleAnnotationManager? _routeEnds;
   CircleAnnotationManager? _locations;
   PointAnnotationManager? _pins;
+  CircleAnnotationManager? _guidancePoints;
+  PointAnnotationManager? _guidanceLabels;
+  List<MapGuidancePoint> _lastGuidancePoints = const [];
   final _pinImages = <MapMarkerRole, Uint8List>{};
   GeoCoordinate? _lastLocation;
   List<MapMarker> _lastMarkers = const [];
@@ -56,6 +61,8 @@ final class MapboxController {
       _routeEnds?.id,
       _locations?.id,
       _pins?.id,
+      _guidancePoints?.id,
+      _guidanceLabels?.id,
     ].nonNulls) {
       if (_disposed) return;
       await _map.annotations.removeAnnotationManagerById(id);
@@ -70,6 +77,7 @@ final class MapboxController {
     _lastRoutePaint = null;
     _lastCoverage = null;
     _lastAlternativePath = const [];
+    _lastGuidancePoints = const [];
     for (final id in [networkLayerId, boundsLayerId, 'igilro.coverage-fill']) {
       final exists = await _map.styleLayerExists(id);
       if (_disposed) return;
@@ -172,6 +180,16 @@ final class MapboxController {
     await _pins!.setIconAllowOverlap(true);
     if (_disposed) return;
     await _pins!.setTextAllowOverlap(true);
+    if (_disposed) return;
+    _guidancePoints = await _map.annotations.createCircleAnnotationManager(
+      id: guidancePointsId,
+    );
+    if (_disposed) return;
+    _guidanceLabels = await _map.annotations.createPointAnnotationManager(
+      id: guidanceLabelsId,
+    );
+    if (_disposed) return;
+    await _guidanceLabels!.setTextAllowOverlap(true);
     for (final role in MapMarkerRole.values) {
       if (_disposed) return;
       _pinImages[role] = await createMapPinImage(switch (role) {
@@ -188,6 +206,7 @@ final class MapboxController {
     List<GeoCoordinate> routePath = const [],
     List<GeoCoordinate> alternativeRoutePath = const [],
     List<MapRouteSegment> routeSegments = const [],
+    List<MapGuidancePoint> guidancePoints = const [],
     MapCoverage? coverage,
     required bool moveCamera,
     required ui.Size viewportSize,
@@ -272,7 +291,48 @@ final class MapboxController {
     await _showLocation(state.currentLocation);
     if (_disposed) return;
     await _showPins(markers);
+    if (_disposed) return;
+    await _showGuidancePoints(guidancePoints);
   });
+
+  Future<void> _showGuidancePoints(List<MapGuidancePoint> points) async {
+    if (_disposed || listEquals(points, _lastGuidancePoints)) return;
+    await _guidancePoints?.deleteAll();
+    if (_disposed) return;
+    await _guidanceLabels?.deleteAll();
+    if (_disposed) return;
+    await _guidancePoints?.createMulti([
+      for (final point in points)
+        CircleAnnotationOptions(
+          geometry: pointFor(point.coordinate),
+          circleColor: _guidanceColor(point.role),
+          circleRadius: point.role == MapGuidancePointRole.selected ? 14 : 10,
+          circleStrokeColor: 0xFFFFFFFF,
+          circleStrokeWidth: 3,
+        ),
+    ]);
+    if (_disposed) return;
+    await _guidanceLabels?.createMulti([
+      for (final point in points)
+        PointAnnotationOptions(
+          geometry: pointFor(point.coordinate),
+          textField: point.label,
+          textColor: _guidanceColor(point.role),
+          textSize: 12,
+          textAnchor: TextAnchor.LEFT,
+          textOffset: [1.4, 0],
+          textHaloColor: 0xFFFFFFFF,
+          textHaloWidth: 2,
+        ),
+    ]);
+    _lastGuidancePoints = List.unmodifiable(points);
+  }
+
+  int _guidanceColor(MapGuidancePointRole role) => switch (role) {
+    MapGuidancePointRole.current => 0xFF23785C,
+    MapGuidancePointRole.next => 0xFF4268C5,
+    MapGuidancePointRole.selected => 0xFFE28A20,
+  };
 
   Future<void> _showRoute(MapRoutePaint paint) async {
     final path = paint.path;
@@ -443,6 +503,8 @@ final class MapboxController {
     _routeEnds = null;
     _locations = null;
     _pins = null;
+    _guidancePoints = null;
+    _guidanceLabels = null;
     _pinImages.clear();
     // MapWidget owns and disposes the underlying native map. Only invalidate
     // this adapter; disposing the SDK map here would release it twice.

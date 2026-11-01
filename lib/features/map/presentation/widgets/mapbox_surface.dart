@@ -20,6 +20,7 @@ class MapboxSurface extends StatefulWidget {
     this.routePath = const [],
     this.alternativeRoutePath = const [],
     this.routeSegments = const [],
+    this.guidancePoints = const [],
     this.coverage,
     this.onAccessPointTapped,
     this.onCoordinateTapped,
@@ -33,6 +34,7 @@ class MapboxSurface extends StatefulWidget {
   final List<GeoCoordinate> routePath;
   final List<GeoCoordinate> alternativeRoutePath;
   final List<MapRouteSegment> routeSegments;
+  final List<MapGuidancePoint> guidancePoints;
   final MapCoverage? coverage;
   final ValueChanged<MapAccessPoint>? onAccessPointTapped;
   final ValueChanged<GeoCoordinate>? onCoordinateTapped;
@@ -81,6 +83,7 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
             oldWidget.state.lightingAt != widget.state.lightingAt ||
             oldWidget.coverage != widget.coverage ||
             !listEquals(oldWidget.routeSegments, widget.routeSegments) ||
+            !listEquals(oldWidget.guidancePoints, widget.guidancePoints) ||
             !listEquals(oldWidget.markers, widget.markers) ||
             !listEquals(oldWidget.routePath, widget.routePath) ||
             !listEquals(
@@ -115,6 +118,7 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
         routePath: widget.routePath,
         alternativeRoutePath: widget.alternativeRoutePath,
         routeSegments: widget.routeSegments,
+        guidancePoints: widget.guidancePoints,
         coverage: widget.coverage,
         moveCamera: moveCamera,
         viewportSize: _viewportSize,
@@ -138,6 +142,7 @@ class _MapboxSurfaceState extends State<MapboxSurface> {
         routePath: widget.routePath,
         alternativeRoutePath: widget.alternativeRoutePath,
         routeSegments: widget.routeSegments,
+        guidancePoints: widget.guidancePoints,
         coverage: widget.coverage,
         moveCamera: true,
         viewportSize: _viewportSize,

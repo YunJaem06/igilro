@@ -13,6 +13,393 @@ part of 'map_overlays.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
+mixin _$MapGuidancePoint {
+  GeoCoordinate get coordinate;
+  MapGuidancePointRole get role;
+  String get label;
+
+  /// Create a copy of MapGuidancePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $MapGuidancePointCopyWith<MapGuidancePoint> get copyWith =>
+      _$MapGuidancePointCopyWithImpl<MapGuidancePoint>(
+        this as MapGuidancePoint,
+        _$identity,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    final _this = this as MapGuidancePoint;
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is MapGuidancePoint &&
+            (identical(other.coordinate, _this.coordinate) ||
+                other.coordinate == _this.coordinate) &&
+            (identical(other.role, _this.role) || other.role == _this.role) &&
+            (identical(other.label, _this.label) ||
+                other.label == _this.label));
+  }
+
+  @override
+  int get hashCode {
+    final _this = this as MapGuidancePoint;
+    return Object.hash(runtimeType, _this.coordinate, _this.role, _this.label);
+  }
+
+  @override
+  String toString() {
+    final _this = this as MapGuidancePoint;
+    return 'MapGuidancePoint(coordinate: ${_this.coordinate}, role: ${_this.role}, label: ${_this.label})';
+  }
+}
+
+/// @nodoc
+abstract mixin class $MapGuidancePointCopyWith<$Res> {
+  factory $MapGuidancePointCopyWith(
+    MapGuidancePoint value,
+    $Res Function(MapGuidancePoint) _then,
+  ) = _$MapGuidancePointCopyWithImpl;
+  @useResult
+  $Res call({
+    GeoCoordinate coordinate,
+    MapGuidancePointRole role,
+    String label,
+  });
+
+  $GeoCoordinateCopyWith<$Res> get coordinate;
+}
+
+/// @nodoc
+class _$MapGuidancePointCopyWithImpl<$Res>
+    implements $MapGuidancePointCopyWith<$Res> {
+  _$MapGuidancePointCopyWithImpl(this._self, this._then);
+
+  final MapGuidancePoint _self;
+  final $Res Function(MapGuidancePoint) _then;
+
+  /// Create a copy of MapGuidancePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? coordinate = null,
+    Object? role = null,
+    Object? label = null,
+  }) {
+    return _then(
+      MapGuidancePoint(
+        coordinate: null == coordinate
+            ? _self.coordinate
+            : coordinate // ignore: cast_nullable_to_non_nullable
+                  as GeoCoordinate,
+        role: null == role
+            ? _self.role
+            : role // ignore: cast_nullable_to_non_nullable
+                  as MapGuidancePointRole,
+        label: null == label
+            ? _self.label
+            : label // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+
+  /// Create a copy of MapGuidancePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $GeoCoordinateCopyWith<$Res> get coordinate {
+    return $GeoCoordinateCopyWith<$Res>(_self.coordinate, (value) {
+      return _then(_self.copyWith(coordinate: value));
+    });
+  }
+}
+
+/// Adds pattern-matching-related methods to [MapGuidancePoint].
+extension MapGuidancePointPatterns on MapGuidancePoint {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MapGuidancePoint value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MapGuidancePoint() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MapGuidancePoint value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MapGuidancePoint():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MapGuidancePoint value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MapGuidancePoint() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(
+      GeoCoordinate coordinate,
+      MapGuidancePointRole role,
+      String label,
+    )?
+    $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MapGuidancePoint() when $default != null:
+        return $default(_that.coordinate, _that.role, _that.label);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(
+      GeoCoordinate coordinate,
+      MapGuidancePointRole role,
+      String label,
+    )
+    $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MapGuidancePoint():
+        return $default(_that.coordinate, _that.role, _that.label);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(
+      GeoCoordinate coordinate,
+      MapGuidancePointRole role,
+      String label,
+    )?
+    $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MapGuidancePoint() when $default != null:
+        return $default(_that.coordinate, _that.role, _that.label);
+      case _:
+        return null;
+    }
+  }
+}
+
+/// @nodoc
+
+class _MapGuidancePoint implements MapGuidancePoint {
+  const _MapGuidancePoint({
+    required this.coordinate,
+    required this.role,
+    required this.label,
+  });
+
+  @override
+  final GeoCoordinate coordinate;
+  @override
+  final MapGuidancePointRole role;
+  @override
+  final String label;
+
+  /// Create a copy of MapGuidancePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$MapGuidancePointCopyWith<_MapGuidancePoint> get copyWith =>
+      __$MapGuidancePointCopyWithImpl<_MapGuidancePoint>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _MapGuidancePoint &&
+            (identical(other.coordinate, coordinate) ||
+                other.coordinate == coordinate) &&
+            (identical(other.role, role) || other.role == role) &&
+            (identical(other.label, label) || other.label == label));
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(runtimeType, coordinate, role, label);
+  }
+
+  @override
+  String toString() {
+    return 'MapGuidancePoint(coordinate: $coordinate, role: $role, label: $label)';
+  }
+}
+
+/// @nodoc
+abstract mixin class _$MapGuidancePointCopyWith<$Res>
+    implements $MapGuidancePointCopyWith<$Res> {
+  factory _$MapGuidancePointCopyWith(
+    _MapGuidancePoint value,
+    $Res Function(_MapGuidancePoint) _then,
+  ) = __$MapGuidancePointCopyWithImpl;
+  @override
+  @useResult
+  $Res call({
+    GeoCoordinate coordinate,
+    MapGuidancePointRole role,
+    String label,
+  });
+
+  @override
+  $GeoCoordinateCopyWith<$Res> get coordinate;
+}
+
+/// @nodoc
+class __$MapGuidancePointCopyWithImpl<$Res>
+    implements _$MapGuidancePointCopyWith<$Res> {
+  __$MapGuidancePointCopyWithImpl(this._self, this._then);
+
+  final _MapGuidancePoint _self;
+  final $Res Function(_MapGuidancePoint) _then;
+
+  /// Create a copy of MapGuidancePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? coordinate = null,
+    Object? role = null,
+    Object? label = null,
+  }) {
+    return _then(
+      _MapGuidancePoint(
+        coordinate: null == coordinate
+            ? _self.coordinate
+            : coordinate // ignore: cast_nullable_to_non_nullable
+                  as GeoCoordinate,
+        role: null == role
+            ? _self.role
+            : role // ignore: cast_nullable_to_non_nullable
+                  as MapGuidancePointRole,
+        label: null == label
+            ? _self.label
+            : label // ignore: cast_nullable_to_non_nullable
+                  as String,
+      ),
+    );
+  }
+
+  /// Create a copy of MapGuidancePoint
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $GeoCoordinateCopyWith<$Res> get coordinate {
+    return $GeoCoordinateCopyWith<$Res>(_self.coordinate, (value) {
+      return _then(_self.copyWith(coordinate: value));
+    });
+  }
+}
+
+/// @nodoc
 mixin _$MapRouteSegment {
   MapShadeState get state;
   List<GeoCoordinate> get path;
