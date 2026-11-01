@@ -157,6 +157,14 @@ navigation Domain은 route_search Domain의 불변 RouteGuidance만 참조하고
 
 measureGuidanceSteps는 원본 geometry 진행 위치로 현재 구간의 시작 단계와 다음 단계를 계산한다. GuidanceState.stepProgress는 신뢰할 수 있는 위치에서만 이를 노출하고 도착 시에는 마지막 단계만 남긴다. 앱 조립 코드가 현재·다음·수동 선택의 중복 index를 합쳐 SDK에 독립적인 MapGuidancePoint로 변환한다. map feature는 navigation Presentation을 참조하지 않는다. MapboxController의 별도 원·라벨 manager가 이를 렌더링하며, 같은 입력의 재작성 방지·스타일 재로딩 복원·빈 목록 삭제를 처리한다. inspectCoordinate는 GPS currentLocation을 바꾸지 않고 카메라 목표와 추종 여부만 바꾼다.
 
+## 안내 시간과 도착 완료
+
+navigation/domain/navigation_timing.dart는 서버 구간별 durationToNextStep을 남은 구간 거리 비율로 보간하고, 원본 geometryIndex로 이미 지난 구간을 제외한다. 누적 구간 시간과 전체 duration의 반올림 차이는 비율로 보정한다. guidance가 없는 과거 응답은 전체 duration과 거리 진행률을 사용하며 0/음수 시간·유효하지 않은 진행 값으로 ETA를 만들지 않는다.
+
+NavigationSession은 시작 시각·활성 구간 시작·누적 안내 시간·완료 시각을 가진 불변 값이다. 일시정지와 위치 오류는 활성 구간을 종료하고, 재개는 같은 세션을 이어간다. 도착 후에는 완료 시각과 안내 시간을 고정하고 늦은 위치 콜백을 무시한다. 새 경로 안내와 종료 시에는 세션을 초기화한다. 시각은 navigationNowProvider의 함수 의존성으로 주입해 테스트에서 시스템 시계나 실제 대기에 의존하지 않는다.
+
+GuidanceState.hasReliableProgress는 안내문과 시간 추정이 공유하는 위치 신뢰 조건이다. timeEstimate는 신뢰할 수 있는 following 상태에서만 노출하며, 최근 위치 수신 시각과 남은 보행 시간으로 도착 시각을 만든다. 위치 없이 시간을 차감하는 타이머는 두지 않는다. GuidanceTimeCard는 현지 시각·날짜 경계를 표현하고 ArrivalSummaryCard는 실제 안내 세션과 가상 미리보기 결과를 구분한다. 현재 위치 추적·완료 처리·시간 표시를 위해 서버 API, DTO 또는 Native 코드는 추가하지 않는다.
+
 ## 오류 경계
 
 ```text
