@@ -11,6 +11,8 @@ import 'package:igilro/features/map/presentation/state/map_state.dart';
 import 'package:igilro/features/map/presentation/state/map_overlays.dart';
 import 'package:igilro/features/map/presentation/widgets/map_canvas.dart';
 import 'package:igilro/features/navigation/presentation/guidance_steps_sheet.dart';
+import 'package:igilro/features/navigation/presentation/guidance_time_card.dart';
+import 'package:igilro/features/navigation/presentation/arrival_summary_card.dart';
 import 'package:igilro/features/navigation/presentation/navigation_notifier.dart';
 import 'package:igilro/features/route_search/domain/entities/model_route_prediction.dart';
 import 'package:igilro/features/route_search/domain/entities/route_guidance.dart';
@@ -114,6 +116,10 @@ void main() {
         expect(navigation.isPreview, true);
         expect(navigation.route!.guidance, route.guidance);
         expect(navigation.instruction, isNotNull);
+        expect(navigation.timeEstimate, isNotNull);
+        expect(navigation.timeEstimate!.remaining, greaterThan(Duration.zero));
+        expect(find.byType(GuidanceTimeCard), findsOneWidget);
+        expect(find.textContaining('도착 예정'), findsOneWidget);
         expect(
           tester.widget<MapCanvas>(find.byType(MapCanvas)).guidancePoints,
           hasLength(2),
@@ -126,9 +132,29 @@ void main() {
         debugPrint(
           'IGILRO_MODEL_${mode.name.toUpperCase()} distance=${route.distanceMeters} shade=${route.prediction.modeledShadeRatio} guidanceSteps=${route.guidance!.steps.length}',
         );
-        await tester.pump(const Duration(seconds: 1));
-        await _tap(tester, find.text('안내 종료'));
+        await _waitUntil(
+          tester,
+          () =>
+              container.read(navigationProvider).status ==
+              GuidanceStatus.arrived,
+        );
+        expect(find.byType(ArrivalSummaryCard), findsOneWidget);
+        expect(find.text('경로 미리보기가 끝났어요'), findsOneWidget);
+        expect(
+          find.text('가상 이동 결과입니다. 실제 이동 시간과 거리를 기록하지 않아요.'),
+          findsOneWidget,
+        );
+        expect(find.byType(GuidanceTimeCard), findsNothing);
+        expect(
+          container.read(navigationProvider).session!.completedAt,
+          isNotNull,
+        );
+        expect(container.read(mapProvider).followLocation, false);
+        await _tap(tester, find.byKey(const Key('arrival-finish')));
         expect(container.read(navigationProvider).active, false);
+        expect(container.read(navigationProvider).session, isNull);
+        expect(find.text('안내 시작'), findsOneWidget);
+        debugPrint('IGILRO_ARRIVAL_${mode.name.toUpperCase()}');
       }
       expect(tester.takeException(), isNull);
     },

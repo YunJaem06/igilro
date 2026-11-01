@@ -11,6 +11,8 @@ import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_overlays.dart';
 import 'package:igilro/features/map/presentation/widgets/map_canvas.dart';
 import 'package:igilro/features/navigation/presentation/guidance_map_inspection_card.dart';
+import 'package:igilro/features/navigation/presentation/guidance_time_card.dart';
+import 'package:igilro/features/navigation/presentation/arrival_summary_card.dart';
 import 'package:igilro/features/navigation/presentation/guidance_steps_sheet.dart';
 import 'package:igilro/features/navigation/presentation/navigation_notifier.dart';
 import 'package:igilro/features/route_search/presentation/providers/route_prediction_providers.dart';
@@ -245,6 +247,32 @@ void main() {
       expect(find.byType(GuidanceMapInspectionCard), findsNothing);
       await tap(tester, find.text('전체 길안내'));
       expect(find.text('전체 길안내 · 19단계'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'arrival shows a summary, clears manual inspection and returns to the same result on completion',
+    (tester) async {
+      await mount(tester);
+      await tap(tester, find.text('안내 시작'));
+      expect(find.byType(GuidanceTimeCard), findsOneWidget);
+      await inspect(tester, 8);
+      updates.add(Result.success(fix(route.path.length - 1)));
+      await tester.pumpAndSettle();
+      expect(find.byType(ArrivalSummaryCard), findsOneWidget);
+      expect(find.byType(GuidanceMapInspectionCard), findsNothing);
+      expect(find.byType(GuidanceTimeCard), findsNothing);
+      expect(container.read(mapProvider).followLocation, false);
+      expect(
+        container.read(mapProvider).framedCoordinates,
+        containsAll(route.path),
+      );
+      expect(container.read(mapProvider).currentLocation, route.path.last);
+      await tap(tester, find.byKey(const Key('arrival-finish')));
+      expect(container.read(navigationProvider).active, false);
+      expect(find.text('안내 시작'), findsOneWidget);
+      expect(canvas(tester).routePath, route.path);
+      expect(canvas(tester).guidancePoints, isEmpty);
     },
   );
 
