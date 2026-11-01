@@ -15,6 +15,7 @@ Phase 1은 앱 기반을 구성했고, Phase 2에서 지도와 현재 위치 기
 | `app/router/` | 이름을 가진 경로, GoRouter 생성·해제, 오류 경로 복구 |
 | `app/theme/app_theme.dart` | 공통 Material 3 밝은 테마와 어두운 테마 |
 | `app/pages/home_page.dart` | 지도/위치/경로 입력 View 조립, 위치 성공과 지도 터치를 선택 상태로 연결, Domain 좌표를 지도 렌더링 값으로 변환 |
+| `app/guidance/` | 일반·예측 경로의 활성 결과 Provider와 길안내 지점의 지도 표현 조립 |
 | `app/di/location_dependencies.dart` | 위치 Repository 구현체, 플랫폼 DataSource와 Mapper 조립 |
 | `app/di/route_dependencies.dart` | 경로 검색 Repository 구현체, HTTP DataSource와 Mapper 조립 |
 | `app/di/route_prediction_dependencies.dart` | 기존 경로와 독립적인 공공 3D 모델 예측 Repository·DataSource·Mapper 조립 |
@@ -151,6 +152,10 @@ MapboxController는 GeoJSON source와 bounds fill/outline·보행망 layer를 �
 일반 도보와 모델 예측의 nullable guidance는 공통 RouteGuidanceDto → RouteGuidanceMapper → RouteGuidance로 변환한다. DTO와 Entity는 route_search의 Data/Domain에 각각 두며, Mapper는 전체 경로의 geometryIndex·좌표·단계 순서·누적 거리·거리/시간 합을 확인한다. shadeSegments의 분할 인덱스를 안내 인덱스로 사용하거나 전체 geometry를 단순화하지 않는다. 누락된 과거 응답은 null, 미지원 status는 unknown, 미지원 maneuver는 방향 없는 unknown으로 유지한다. 횡단 신호등의 true/false/null도 보존한다.
 
 navigation Domain은 route_search Domain의 불변 RouteGuidance만 참조하고, 반대 방향 의존성이나 Presentation/Data 간 직접 참조는 만들지 않는다. HomePage가 선택된 일반/예측 경로의 path·거리·시간·guidance를 NavigationRoute에 전달한다. measureProgress는 원본 segment index와 투영 비율을 보존하고 nextInstruction이 다음 서버 단계와 현재 위치에서의 거리를 계산한다. GuidanceState의 파생 instruction은 약한 GPS·일시 정지·접근 중·이탈 상태와 의심스러운 첫 이탈 위치에서 숨긴다. GuidancePanel은 Domain 값만 관찰하고 서버 instruction을 일반 Text로 표시한다. 신호 설치 정보와 실시간 신호 상태, 길안내 AVAILABLE과 그늘 품질은 별개다.
+
+전체 목록과 지도 간 조립은 app/guidance의 activeRouteProvider를 기준으로 한다. 일반/모델 결과의 query·evaluatedAt·route id로 식별한 활성 경로를 공유한다. navigation의 guidanceSelectionProvider는 이 경로 식별자와 불변 RouteGuidance를 family 인자로 받아 수동 선택 index만 관리한다. GPS와 분리된 UI 상태이므로 별도 Repository/UseCase를 만들지 않는다. 오래 열린 목록의 콜백도 활성 경로 식별자가 일치할 때만 적용한다.
+
+measureGuidanceSteps는 원본 geometry 진행 위치로 현재 구간의 시작 단계와 다음 단계를 계산한다. GuidanceState.stepProgress는 신뢰할 수 있는 위치에서만 이를 노출하고 도착 시에는 마지막 단계만 남긴다. 앱 조립 코드가 현재·다음·수동 선택의 중복 index를 합쳐 SDK에 독립적인 MapGuidancePoint로 변환한다. map feature는 navigation Presentation을 참조하지 않는다. MapboxController의 별도 원·라벨 manager가 이를 렌더링하며, 같은 입력의 재작성 방지·스타일 재로딩 복원·빈 목록 삭제를 처리한다. inspectCoordinate는 GPS currentLocation을 바꾸지 않고 카메라 목표와 추종 여부만 바꾼다.
 
 ## 오류 경계
 
