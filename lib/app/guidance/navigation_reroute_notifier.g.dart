@@ -45,7 +45,7 @@ final class NavigationRerouteNotifierProvider
 }
 
 String _$navigationRerouteNotifierHash() =>
-    r'3f119e0953f8252af465a5e5ee3bd127ce43fc20';
+    r'488723ca31180c883ef9c41e7426482914e617a3';
 
 /// Keeps the old route available until a replacement search succeeds.
 

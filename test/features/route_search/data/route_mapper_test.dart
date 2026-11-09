@@ -34,6 +34,59 @@ void main() {
     },
   );
 
+  test(
+    'maps running and fastest as one comparison and rejects mixed endpoints',
+    () {
+      final runningQuery = query.copyWith(mode: RouteMode.running);
+      expect(mapper.toRequest(runningQuery).toJson()['mode'], 'running');
+
+      final fastest = dto.routes.single.copyWith(
+        metrics: dto.routes.single.metrics.copyWith(
+          stairsMeters: 8,
+          mappedCrossingCount: 2,
+        ),
+      );
+      final running = fastest.copyWith(
+        id: 'running',
+        mode: 'running',
+        distanceMeters: 165,
+        durationSeconds: 118,
+        additionalDurationSeconds: 16,
+        metrics: fastest.metrics.copyWith(
+          stairsMeters: 0,
+          mappedCrossingCount: 1,
+        ),
+      );
+      final pair = dto.copyWith(routes: [fastest, running]);
+      final result = mapper.toResult(pair, runningQuery);
+      expect(result.routeFor(RouteMode.fastest).metrics.stairsMeters, 8);
+      final route = result.routeFor(RouteMode.running);
+      expect(route.distanceMeters, 165);
+      expect(route.additionalDuration, const Duration(seconds: 16));
+      expect(route.metrics.mappedCrossingCount, 1);
+
+      final changed = running.copyWith(
+        geometry: running.geometry.copyWith(
+          coordinates: [
+            [127.03, 37.54],
+            ...running.geometry.coordinates.skip(1),
+          ],
+        ),
+      );
+      expect(
+        () => mapper.toResult(
+          dto.copyWith(routes: [fastest, changed]),
+          runningQuery,
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => mapper.toResult(dto.copyWith(routes: [fastest]), runningQuery),
+        throwsFormatException,
+      );
+    },
+  );
+
   test('preserves GeoJSON order, snapping, units, versions and source', () {
     final result = mapper.toResult(dto, query);
     final route = result.routes.single;

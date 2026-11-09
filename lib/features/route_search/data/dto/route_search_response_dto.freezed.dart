@@ -2122,6 +2122,9 @@ mixin _$RouteMetricsDto {
   double? get lightingScore;
   @JsonKey(fromJson: _readOptionalWholeNumber)
   int? get trafficSignalCount;
+  double? get stairsMeters;
+  @JsonKey(fromJson: _readOptionalWholeNumber)
+  int? get mappedCrossingCount;
 
   /// Create a copy of RouteMetricsDto
   /// with the given fields replaced by the non-null parameter values.
@@ -2149,7 +2152,11 @@ mixin _$RouteMetricsDto {
             (identical(other.lightingScore, _this.lightingScore) ||
                 other.lightingScore == _this.lightingScore) &&
             (identical(other.trafficSignalCount, _this.trafficSignalCount) ||
-                other.trafficSignalCount == _this.trafficSignalCount));
+                other.trafficSignalCount == _this.trafficSignalCount) &&
+            (identical(other.stairsMeters, _this.stairsMeters) ||
+                other.stairsMeters == _this.stairsMeters) &&
+            (identical(other.mappedCrossingCount, _this.mappedCrossingCount) ||
+                other.mappedCrossingCount == _this.mappedCrossingCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2162,13 +2169,15 @@ mixin _$RouteMetricsDto {
       _this.quietScore,
       _this.lightingScore,
       _this.trafficSignalCount,
+      _this.stairsMeters,
+      _this.mappedCrossingCount,
     );
   }
 
   @override
   String toString() {
     final _this = this as RouteMetricsDto;
-    return 'RouteMetricsDto(shadeRatio: ${_this.shadeRatio}, quietScore: ${_this.quietScore}, lightingScore: ${_this.lightingScore}, trafficSignalCount: ${_this.trafficSignalCount})';
+    return 'RouteMetricsDto(shadeRatio: ${_this.shadeRatio}, quietScore: ${_this.quietScore}, lightingScore: ${_this.lightingScore}, trafficSignalCount: ${_this.trafficSignalCount}, stairsMeters: ${_this.stairsMeters}, mappedCrossingCount: ${_this.mappedCrossingCount})';
   }
 }
 
@@ -2184,6 +2193,8 @@ abstract mixin class $RouteMetricsDtoCopyWith<$Res> {
     double? quietScore,
     double? lightingScore,
     @JsonKey(fromJson: _readOptionalWholeNumber) int? trafficSignalCount,
+    double? stairsMeters,
+    @JsonKey(fromJson: _readOptionalWholeNumber) int? mappedCrossingCount,
   });
 }
 
@@ -2204,6 +2215,8 @@ class _$RouteMetricsDtoCopyWithImpl<$Res>
     Object? quietScore = freezed,
     Object? lightingScore = freezed,
     Object? trafficSignalCount = freezed,
+    Object? stairsMeters = freezed,
+    Object? mappedCrossingCount = freezed,
   }) {
     return _then(
       RouteMetricsDto(
@@ -2222,6 +2235,14 @@ class _$RouteMetricsDtoCopyWithImpl<$Res>
         trafficSignalCount: freezed == trafficSignalCount
             ? _self.trafficSignalCount
             : trafficSignalCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        stairsMeters: freezed == stairsMeters
+            ? _self.stairsMeters
+            : stairsMeters // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        mappedCrossingCount: freezed == mappedCrossingCount
+            ? _self.mappedCrossingCount
+            : mappedCrossingCount // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );
@@ -2326,6 +2347,8 @@ extension RouteMetricsDtoPatterns on RouteMetricsDto {
       double? quietScore,
       double? lightingScore,
       @JsonKey(fromJson: _readOptionalWholeNumber) int? trafficSignalCount,
+      double? stairsMeters,
+      @JsonKey(fromJson: _readOptionalWholeNumber) int? mappedCrossingCount,
     )?
     $default, {
     required TResult orElse(),
@@ -2338,6 +2361,8 @@ extension RouteMetricsDtoPatterns on RouteMetricsDto {
           _that.quietScore,
           _that.lightingScore,
           _that.trafficSignalCount,
+          _that.stairsMeters,
+          _that.mappedCrossingCount,
         );
       case _:
         return orElse();
@@ -2364,6 +2389,8 @@ extension RouteMetricsDtoPatterns on RouteMetricsDto {
       double? quietScore,
       double? lightingScore,
       @JsonKey(fromJson: _readOptionalWholeNumber) int? trafficSignalCount,
+      double? stairsMeters,
+      @JsonKey(fromJson: _readOptionalWholeNumber) int? mappedCrossingCount,
     )
     $default,
   ) {
@@ -2375,6 +2402,8 @@ extension RouteMetricsDtoPatterns on RouteMetricsDto {
           _that.quietScore,
           _that.lightingScore,
           _that.trafficSignalCount,
+          _that.stairsMeters,
+          _that.mappedCrossingCount,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -2400,6 +2429,8 @@ extension RouteMetricsDtoPatterns on RouteMetricsDto {
       double? quietScore,
       double? lightingScore,
       @JsonKey(fromJson: _readOptionalWholeNumber) int? trafficSignalCount,
+      double? stairsMeters,
+      @JsonKey(fromJson: _readOptionalWholeNumber) int? mappedCrossingCount,
     )?
     $default,
   ) {
@@ -2411,6 +2442,8 @@ extension RouteMetricsDtoPatterns on RouteMetricsDto {
           _that.quietScore,
           _that.lightingScore,
           _that.trafficSignalCount,
+          _that.stairsMeters,
+          _that.mappedCrossingCount,
         );
       case _:
         return null;
@@ -2426,6 +2459,8 @@ class _RouteMetricsDto implements RouteMetricsDto {
     this.quietScore,
     this.lightingScore,
     @JsonKey(fromJson: _readOptionalWholeNumber) this.trafficSignalCount,
+    this.stairsMeters,
+    @JsonKey(fromJson: _readOptionalWholeNumber) this.mappedCrossingCount,
   });
   factory _RouteMetricsDto.fromJson(Map<String, dynamic> json) =>
       _$RouteMetricsDtoFromJson(json);
@@ -2439,6 +2474,11 @@ class _RouteMetricsDto implements RouteMetricsDto {
   @override
   @JsonKey(fromJson: _readOptionalWholeNumber)
   final int? trafficSignalCount;
+  @override
+  final double? stairsMeters;
+  @override
+  @JsonKey(fromJson: _readOptionalWholeNumber)
+  final int? mappedCrossingCount;
 
   /// Create a copy of RouteMetricsDto
   /// with the given fields replaced by the non-null parameter values.
@@ -2465,7 +2505,11 @@ class _RouteMetricsDto implements RouteMetricsDto {
             (identical(other.lightingScore, lightingScore) ||
                 other.lightingScore == lightingScore) &&
             (identical(other.trafficSignalCount, trafficSignalCount) ||
-                other.trafficSignalCount == trafficSignalCount));
+                other.trafficSignalCount == trafficSignalCount) &&
+            (identical(other.stairsMeters, stairsMeters) ||
+                other.stairsMeters == stairsMeters) &&
+            (identical(other.mappedCrossingCount, mappedCrossingCount) ||
+                other.mappedCrossingCount == mappedCrossingCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2477,12 +2521,14 @@ class _RouteMetricsDto implements RouteMetricsDto {
       quietScore,
       lightingScore,
       trafficSignalCount,
+      stairsMeters,
+      mappedCrossingCount,
     );
   }
 
   @override
   String toString() {
-    return 'RouteMetricsDto(shadeRatio: $shadeRatio, quietScore: $quietScore, lightingScore: $lightingScore, trafficSignalCount: $trafficSignalCount)';
+    return 'RouteMetricsDto(shadeRatio: $shadeRatio, quietScore: $quietScore, lightingScore: $lightingScore, trafficSignalCount: $trafficSignalCount, stairsMeters: $stairsMeters, mappedCrossingCount: $mappedCrossingCount)';
   }
 }
 
@@ -2500,6 +2546,8 @@ abstract mixin class _$RouteMetricsDtoCopyWith<$Res>
     double? quietScore,
     double? lightingScore,
     @JsonKey(fromJson: _readOptionalWholeNumber) int? trafficSignalCount,
+    double? stairsMeters,
+    @JsonKey(fromJson: _readOptionalWholeNumber) int? mappedCrossingCount,
   });
 }
 
@@ -2520,6 +2568,8 @@ class __$RouteMetricsDtoCopyWithImpl<$Res>
     Object? quietScore = freezed,
     Object? lightingScore = freezed,
     Object? trafficSignalCount = freezed,
+    Object? stairsMeters = freezed,
+    Object? mappedCrossingCount = freezed,
   }) {
     return _then(
       _RouteMetricsDto(
@@ -2538,6 +2588,14 @@ class __$RouteMetricsDtoCopyWithImpl<$Res>
         trafficSignalCount: freezed == trafficSignalCount
             ? _self.trafficSignalCount
             : trafficSignalCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        stairsMeters: freezed == stairsMeters
+            ? _self.stairsMeters
+            : stairsMeters // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        mappedCrossingCount: freezed == mappedCrossingCount
+            ? _self.mappedCrossingCount
+            : mappedCrossingCount // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );

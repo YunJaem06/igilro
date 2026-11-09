@@ -39,6 +39,7 @@ class NavigationRerouteNotifier extends _$NavigationRerouteNotifier {
       if (!_applyingRoute) _stopGuidance();
     });
     ref.listen(routeSearchKindProvider, (_, _) => _stopGuidance());
+    ref.listen(runningRouteSelectionProvider, (_, _) => _stopGuidance());
     ref.listen(routePredictionOptionsProvider, (_, _) => _stopGuidance());
     ref.listen(navigationProvider.select((value) => value.active), (_, active) {
       if (!active) cancel();
@@ -120,11 +121,11 @@ class NavigationRerouteNotifier extends _$NavigationRerouteNotifier {
           source: RoutePointSource.currentLocation,
         ),
       );
-      if (kind == RouteSearchKind.general) {
+      if (kind != RouteSearchKind.prediction) {
         final search = ref.read(searchRouteUseCaseProvider);
         _cancelPending = search.cancel;
         await _finish(
-          search(nextEndpoints, departureAt: now()),
+          search(nextEndpoints, departureAt: now(), mode: kind.walkingMode),
           revision,
           nextEndpoints,
           (result) =>

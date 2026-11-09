@@ -14,6 +14,7 @@ final class SearchRouteUseCase {
   Future<Result<RouteSearchResult>> call(
     RouteEndpoints endpoints, {
     required DateTime departureAt,
+    RouteMode mode = RouteMode.fastest,
   }) async {
     final origin = endpoints.origin?.coordinate;
     final destination = endpoints.destination?.coordinate;
@@ -40,6 +41,7 @@ final class SearchRouteUseCase {
         origin: origin,
         destination: destination,
         departureAt: departureAt.toUtc(),
+        mode: mode,
       ),
     );
   }

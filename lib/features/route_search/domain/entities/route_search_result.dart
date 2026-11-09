@@ -8,6 +8,11 @@ part 'route_search_result.freezed.dart';
 
 @freezed
 abstract class RouteSearchResult with _$RouteSearchResult {
+  const RouteSearchResult._();
+
+  RouteCandidate routeFor(RouteMode mode) =>
+      routes.firstWhere((route) => route.mode == mode);
+
   const factory RouteSearchResult({
     required RouteQuery query,
     required List<RouteCandidate> routes,

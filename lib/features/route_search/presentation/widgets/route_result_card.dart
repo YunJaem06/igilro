@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/geo/geo_coordinate.dart';
 import '../../domain/entities/route_endpoints.dart';
 import '../../domain/entities/route_point.dart';
+import '../../domain/entities/route_query.dart';
 import '../../domain/entities/route_search_result.dart';
 import '../models/route_result_formatters.dart';
 import 'route_shade_info.dart';
@@ -12,14 +13,16 @@ class RouteResultCard extends StatelessWidget {
     super.key,
     required this.result,
     required this.endpoints,
+    this.mode = RouteMode.fastest,
   });
 
   final RouteSearchResult result;
   final RouteEndpoints endpoints;
+  final RouteMode mode;
 
   @override
   Widget build(BuildContext context) {
-    final route = result.routes.first;
+    final route = result.routeFor(mode);
     final theme = Theme.of(context);
     return Card.outlined(
       margin: EdgeInsets.zero,
@@ -41,7 +44,7 @@ class RouteResultCard extends StatelessWidget {
                     size: 18,
                     color: theme.colorScheme.primary,
                   ),
-                  label: const Text('빠른 길'),
+                  label: Text(mode == RouteMode.running ? '러닝 추천' : '빠른 길'),
                 ),
               ],
             ),
@@ -73,7 +76,8 @@ class RouteResultCard extends StatelessWidget {
               color: const Color(0xFF4268C5),
             ),
             const SizedBox(height: 16),
-            RouteShadeInfo(route: route, evaluatedAt: result.evaluatedAt),
+            if (result.query.mode != RouteMode.running)
+              RouteShadeInfo(route: route, evaluatedAt: result.evaluatedAt),
             const SizedBox(height: 8),
             ExpansionTile(
               key: ValueKey((result.query, route.id)),

@@ -34,7 +34,7 @@ final class RouteSearchNotifierProvider
 }
 
 String _$routeSearchNotifierHash() =>
-    r'3e2e120dc3bead177fd72a2c1f046872d0f49080';
+    r'1aa2b71cd2083a79d2ffeb8751132157494f37b8';
 
 abstract class _$RouteSearchNotifier
     extends $AsyncNotifier<RouteSearchResult?> {

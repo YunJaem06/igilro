@@ -17,6 +17,7 @@ mixin _$RouteQuery {
   GeoCoordinate get origin;
   GeoCoordinate get destination;
   DateTime get departureAt;
+  RouteMode get mode;
 
   /// Create a copy of RouteQuery
   /// with the given fields replaced by the non-null parameter values.
@@ -36,7 +37,8 @@ mixin _$RouteQuery {
             (identical(other.destination, _this.destination) ||
                 other.destination == _this.destination) &&
             (identical(other.departureAt, _this.departureAt) ||
-                other.departureAt == _this.departureAt));
+                other.departureAt == _this.departureAt) &&
+            (identical(other.mode, _this.mode) || other.mode == _this.mode));
   }
 
   @override
@@ -47,13 +49,14 @@ mixin _$RouteQuery {
       _this.origin,
       _this.destination,
       _this.departureAt,
+      _this.mode,
     );
   }
 
   @override
   String toString() {
     final _this = this as RouteQuery;
-    return 'RouteQuery(origin: ${_this.origin}, destination: ${_this.destination}, departureAt: ${_this.departureAt})';
+    return 'RouteQuery(origin: ${_this.origin}, destination: ${_this.destination}, departureAt: ${_this.departureAt}, mode: ${_this.mode})';
   }
 }
 
@@ -68,6 +71,7 @@ abstract mixin class $RouteQueryCopyWith<$Res> {
     GeoCoordinate origin,
     GeoCoordinate destination,
     DateTime departureAt,
+    RouteMode mode,
   });
 
   $GeoCoordinateCopyWith<$Res> get origin;
@@ -89,6 +93,7 @@ class _$RouteQueryCopyWithImpl<$Res> implements $RouteQueryCopyWith<$Res> {
     Object? origin = null,
     Object? destination = null,
     Object? departureAt = null,
+    Object? mode = null,
   }) {
     return _then(
       RouteQuery(
@@ -104,6 +109,10 @@ class _$RouteQueryCopyWithImpl<$Res> implements $RouteQueryCopyWith<$Res> {
             ? _self.departureAt
             : departureAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        mode: null == mode
+            ? _self.mode
+            : mode // ignore: cast_nullable_to_non_nullable
+                  as RouteMode,
       ),
     );
   }
@@ -226,6 +235,7 @@ extension RouteQueryPatterns on RouteQuery {
       GeoCoordinate origin,
       GeoCoordinate destination,
       DateTime departureAt,
+      RouteMode mode,
     )?
     $default, {
     required TResult orElse(),
@@ -233,7 +243,12 @@ extension RouteQueryPatterns on RouteQuery {
     final _that = this;
     switch (_that) {
       case _RouteQuery() when $default != null:
-        return $default(_that.origin, _that.destination, _that.departureAt);
+        return $default(
+          _that.origin,
+          _that.destination,
+          _that.departureAt,
+          _that.mode,
+        );
       case _:
         return orElse();
     }
@@ -258,13 +273,19 @@ extension RouteQueryPatterns on RouteQuery {
       GeoCoordinate origin,
       GeoCoordinate destination,
       DateTime departureAt,
+      RouteMode mode,
     )
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _RouteQuery():
-        return $default(_that.origin, _that.destination, _that.departureAt);
+        return $default(
+          _that.origin,
+          _that.destination,
+          _that.departureAt,
+          _that.mode,
+        );
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -288,13 +309,19 @@ extension RouteQueryPatterns on RouteQuery {
       GeoCoordinate origin,
       GeoCoordinate destination,
       DateTime departureAt,
+      RouteMode mode,
     )?
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _RouteQuery() when $default != null:
-        return $default(_that.origin, _that.destination, _that.departureAt);
+        return $default(
+          _that.origin,
+          _that.destination,
+          _that.departureAt,
+          _that.mode,
+        );
       case _:
         return null;
     }
@@ -308,6 +335,7 @@ class _RouteQuery implements RouteQuery {
     required this.origin,
     required this.destination,
     required this.departureAt,
+    this.mode = RouteMode.fastest,
   });
 
   @override
@@ -316,6 +344,9 @@ class _RouteQuery implements RouteQuery {
   final GeoCoordinate destination;
   @override
   final DateTime departureAt;
+  @override
+  @JsonKey()
+  final RouteMode mode;
 
   /// Create a copy of RouteQuery
   /// with the given fields replaced by the non-null parameter values.
@@ -334,17 +365,18 @@ class _RouteQuery implements RouteQuery {
             (identical(other.destination, destination) ||
                 other.destination == destination) &&
             (identical(other.departureAt, departureAt) ||
-                other.departureAt == departureAt));
+                other.departureAt == departureAt) &&
+            (identical(other.mode, mode) || other.mode == mode));
   }
 
   @override
   int get hashCode {
-    return Object.hash(runtimeType, origin, destination, departureAt);
+    return Object.hash(runtimeType, origin, destination, departureAt, mode);
   }
 
   @override
   String toString() {
-    return 'RouteQuery(origin: $origin, destination: $destination, departureAt: $departureAt)';
+    return 'RouteQuery(origin: $origin, destination: $destination, departureAt: $departureAt, mode: $mode)';
   }
 }
 
@@ -361,6 +393,7 @@ abstract mixin class _$RouteQueryCopyWith<$Res>
     GeoCoordinate origin,
     GeoCoordinate destination,
     DateTime departureAt,
+    RouteMode mode,
   });
 
   @override
@@ -384,6 +417,7 @@ class __$RouteQueryCopyWithImpl<$Res> implements _$RouteQueryCopyWith<$Res> {
     Object? origin = null,
     Object? destination = null,
     Object? departureAt = null,
+    Object? mode = null,
   }) {
     return _then(
       _RouteQuery(
@@ -399,6 +433,10 @@ class __$RouteQueryCopyWithImpl<$Res> implements _$RouteQueryCopyWith<$Res> {
             ? _self.departureAt
             : departureAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        mode: null == mode
+            ? _self.mode
+            : mode // ignore: cast_nullable_to_non_nullable
+                  as RouteMode,
       ),
     );
   }

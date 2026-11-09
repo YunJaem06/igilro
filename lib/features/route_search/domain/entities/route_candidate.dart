@@ -2,6 +2,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../../core/geo/geo_coordinate.dart';
 import 'route_guidance.dart';
+import 'route_query.dart';
 
 part 'route_candidate.freezed.dart';
 
@@ -14,6 +15,7 @@ abstract class RouteCandidate with _$RouteCandidate {
     required Duration duration,
     required Duration additionalDuration,
     required RouteMetrics metrics,
+    @Default(RouteMode.fastest) RouteMode mode,
     RouteShadeEvaluation? shadeEvaluation,
     RouteGuidance? guidance,
   }) = _RouteCandidate;
@@ -48,5 +50,7 @@ abstract class RouteMetrics with _$RouteMetrics {
     double? quietScore,
     double? lightingScore,
     int? trafficSignalCount,
+    double? stairsMeters,
+    int? mappedCrossingCount,
   }) = _RouteMetrics;
 }

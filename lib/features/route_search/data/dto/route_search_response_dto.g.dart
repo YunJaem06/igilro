@@ -114,6 +114,10 @@ _RouteMetricsDto _$RouteMetricsDtoFromJson(Map<String, dynamic> json) =>
       quietScore: (json['quietScore'] as num?)?.toDouble(),
       lightingScore: (json['lightingScore'] as num?)?.toDouble(),
       trafficSignalCount: _readOptionalWholeNumber(json['trafficSignalCount']),
+      stairsMeters: (json['stairsMeters'] as num?)?.toDouble(),
+      mappedCrossingCount: _readOptionalWholeNumber(
+        json['mappedCrossingCount'],
+      ),
     );
 
 Map<String, dynamic> _$RouteMetricsDtoToJson(_RouteMetricsDto instance) =>
@@ -122,6 +126,8 @@ Map<String, dynamic> _$RouteMetricsDtoToJson(_RouteMetricsDto instance) =>
       'quietScore': instance.quietScore,
       'lightingScore': instance.lightingScore,
       'trafficSignalCount': instance.trafficSignalCount,
+      'stairsMeters': instance.stairsMeters,
+      'mappedCrossingCount': instance.mappedCrossingCount,
     };
 
 _RouteSnappingDto _$RouteSnappingDtoFromJson(Map<String, dynamic> json) =>

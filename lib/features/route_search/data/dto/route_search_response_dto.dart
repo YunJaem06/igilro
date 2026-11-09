@@ -79,6 +79,8 @@ abstract class RouteMetricsDto with _$RouteMetricsDto {
     double? quietScore,
     double? lightingScore,
     @JsonKey(fromJson: _readOptionalWholeNumber) int? trafficSignalCount,
+    double? stairsMeters,
+    @JsonKey(fromJson: _readOptionalWholeNumber) int? mappedCrossingCount,
   }) = _RouteMetricsDto;
 
   factory RouteMetricsDto.fromJson(Map<String, dynamic> json) =>

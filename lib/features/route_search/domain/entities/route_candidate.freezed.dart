@@ -20,6 +20,7 @@ mixin _$RouteCandidate {
   Duration get duration;
   Duration get additionalDuration;
   RouteMetrics get metrics;
+  RouteMode get mode;
   RouteShadeEvaluation? get shadeEvaluation;
   RouteGuidance? get guidance;
 
@@ -49,6 +50,7 @@ mixin _$RouteCandidate {
                 other.additionalDuration == _this.additionalDuration) &&
             (identical(other.metrics, _this.metrics) ||
                 other.metrics == _this.metrics) &&
+            (identical(other.mode, _this.mode) || other.mode == _this.mode) &&
             (identical(other.shadeEvaluation, _this.shadeEvaluation) ||
                 other.shadeEvaluation == _this.shadeEvaluation) &&
             (identical(other.guidance, _this.guidance) ||
@@ -66,6 +68,7 @@ mixin _$RouteCandidate {
       _this.duration,
       _this.additionalDuration,
       _this.metrics,
+      _this.mode,
       _this.shadeEvaluation,
       _this.guidance,
     );
@@ -74,7 +77,7 @@ mixin _$RouteCandidate {
   @override
   String toString() {
     final _this = this as RouteCandidate;
-    return 'RouteCandidate(id: ${_this.id}, path: ${_this.path}, distanceMeters: ${_this.distanceMeters}, duration: ${_this.duration}, additionalDuration: ${_this.additionalDuration}, metrics: ${_this.metrics}, shadeEvaluation: ${_this.shadeEvaluation}, guidance: ${_this.guidance})';
+    return 'RouteCandidate(id: ${_this.id}, path: ${_this.path}, distanceMeters: ${_this.distanceMeters}, duration: ${_this.duration}, additionalDuration: ${_this.additionalDuration}, metrics: ${_this.metrics}, mode: ${_this.mode}, shadeEvaluation: ${_this.shadeEvaluation}, guidance: ${_this.guidance})';
   }
 }
 
@@ -92,6 +95,7 @@ abstract mixin class $RouteCandidateCopyWith<$Res> {
     Duration duration,
     Duration additionalDuration,
     RouteMetrics metrics,
+    RouteMode mode,
     RouteShadeEvaluation? shadeEvaluation,
     RouteGuidance? guidance,
   });
@@ -120,6 +124,7 @@ class _$RouteCandidateCopyWithImpl<$Res>
     Object? duration = null,
     Object? additionalDuration = null,
     Object? metrics = null,
+    Object? mode = null,
     Object? shadeEvaluation = freezed,
     Object? guidance = freezed,
   }) {
@@ -149,6 +154,10 @@ class _$RouteCandidateCopyWithImpl<$Res>
             ? _self.metrics
             : metrics // ignore: cast_nullable_to_non_nullable
                   as RouteMetrics,
+        mode: null == mode
+            ? _self.mode
+            : mode // ignore: cast_nullable_to_non_nullable
+                  as RouteMode,
         shadeEvaluation: freezed == shadeEvaluation
             ? _self.shadeEvaluation
             : shadeEvaluation // ignore: cast_nullable_to_non_nullable
@@ -300,6 +309,7 @@ extension RouteCandidatePatterns on RouteCandidate {
       Duration duration,
       Duration additionalDuration,
       RouteMetrics metrics,
+      RouteMode mode,
       RouteShadeEvaluation? shadeEvaluation,
       RouteGuidance? guidance,
     )?
@@ -316,6 +326,7 @@ extension RouteCandidatePatterns on RouteCandidate {
           _that.duration,
           _that.additionalDuration,
           _that.metrics,
+          _that.mode,
           _that.shadeEvaluation,
           _that.guidance,
         );
@@ -346,6 +357,7 @@ extension RouteCandidatePatterns on RouteCandidate {
       Duration duration,
       Duration additionalDuration,
       RouteMetrics metrics,
+      RouteMode mode,
       RouteShadeEvaluation? shadeEvaluation,
       RouteGuidance? guidance,
     )
@@ -361,6 +373,7 @@ extension RouteCandidatePatterns on RouteCandidate {
           _that.duration,
           _that.additionalDuration,
           _that.metrics,
+          _that.mode,
           _that.shadeEvaluation,
           _that.guidance,
         );
@@ -390,6 +403,7 @@ extension RouteCandidatePatterns on RouteCandidate {
       Duration duration,
       Duration additionalDuration,
       RouteMetrics metrics,
+      RouteMode mode,
       RouteShadeEvaluation? shadeEvaluation,
       RouteGuidance? guidance,
     )?
@@ -405,6 +419,7 @@ extension RouteCandidatePatterns on RouteCandidate {
           _that.duration,
           _that.additionalDuration,
           _that.metrics,
+          _that.mode,
           _that.shadeEvaluation,
           _that.guidance,
         );
@@ -424,6 +439,7 @@ class _RouteCandidate implements RouteCandidate {
     required this.duration,
     required this.additionalDuration,
     required this.metrics,
+    this.mode = RouteMode.fastest,
     this.shadeEvaluation,
     this.guidance,
   }) : _path = path;
@@ -446,6 +462,9 @@ class _RouteCandidate implements RouteCandidate {
   final Duration additionalDuration;
   @override
   final RouteMetrics metrics;
+  @override
+  @JsonKey()
+  final RouteMode mode;
   @override
   final RouteShadeEvaluation? shadeEvaluation;
   @override
@@ -473,6 +492,7 @@ class _RouteCandidate implements RouteCandidate {
             (identical(other.additionalDuration, additionalDuration) ||
                 other.additionalDuration == additionalDuration) &&
             (identical(other.metrics, metrics) || other.metrics == metrics) &&
+            (identical(other.mode, mode) || other.mode == mode) &&
             (identical(other.shadeEvaluation, shadeEvaluation) ||
                 other.shadeEvaluation == shadeEvaluation) &&
             (identical(other.guidance, guidance) ||
@@ -489,6 +509,7 @@ class _RouteCandidate implements RouteCandidate {
       duration,
       additionalDuration,
       metrics,
+      mode,
       shadeEvaluation,
       guidance,
     );
@@ -496,7 +517,7 @@ class _RouteCandidate implements RouteCandidate {
 
   @override
   String toString() {
-    return 'RouteCandidate(id: $id, path: $path, distanceMeters: $distanceMeters, duration: $duration, additionalDuration: $additionalDuration, metrics: $metrics, shadeEvaluation: $shadeEvaluation, guidance: $guidance)';
+    return 'RouteCandidate(id: $id, path: $path, distanceMeters: $distanceMeters, duration: $duration, additionalDuration: $additionalDuration, metrics: $metrics, mode: $mode, shadeEvaluation: $shadeEvaluation, guidance: $guidance)';
   }
 }
 
@@ -516,6 +537,7 @@ abstract mixin class _$RouteCandidateCopyWith<$Res>
     Duration duration,
     Duration additionalDuration,
     RouteMetrics metrics,
+    RouteMode mode,
     RouteShadeEvaluation? shadeEvaluation,
     RouteGuidance? guidance,
   });
@@ -547,6 +569,7 @@ class __$RouteCandidateCopyWithImpl<$Res>
     Object? duration = null,
     Object? additionalDuration = null,
     Object? metrics = null,
+    Object? mode = null,
     Object? shadeEvaluation = freezed,
     Object? guidance = freezed,
   }) {
@@ -576,6 +599,10 @@ class __$RouteCandidateCopyWithImpl<$Res>
             ? _self.metrics
             : metrics // ignore: cast_nullable_to_non_nullable
                   as RouteMetrics,
+        mode: null == mode
+            ? _self.mode
+            : mode // ignore: cast_nullable_to_non_nullable
+                  as RouteMode,
         shadeEvaluation: freezed == shadeEvaluation
             ? _self.shadeEvaluation
             : shadeEvaluation // ignore: cast_nullable_to_non_nullable
@@ -1109,6 +1136,8 @@ mixin _$RouteMetrics {
   double? get quietScore;
   double? get lightingScore;
   int? get trafficSignalCount;
+  double? get stairsMeters;
+  int? get mappedCrossingCount;
 
   /// Create a copy of RouteMetrics
   /// with the given fields replaced by the non-null parameter values.
@@ -1133,7 +1162,11 @@ mixin _$RouteMetrics {
             (identical(other.lightingScore, _this.lightingScore) ||
                 other.lightingScore == _this.lightingScore) &&
             (identical(other.trafficSignalCount, _this.trafficSignalCount) ||
-                other.trafficSignalCount == _this.trafficSignalCount));
+                other.trafficSignalCount == _this.trafficSignalCount) &&
+            (identical(other.stairsMeters, _this.stairsMeters) ||
+                other.stairsMeters == _this.stairsMeters) &&
+            (identical(other.mappedCrossingCount, _this.mappedCrossingCount) ||
+                other.mappedCrossingCount == _this.mappedCrossingCount));
   }
 
   @override
@@ -1145,13 +1178,15 @@ mixin _$RouteMetrics {
       _this.quietScore,
       _this.lightingScore,
       _this.trafficSignalCount,
+      _this.stairsMeters,
+      _this.mappedCrossingCount,
     );
   }
 
   @override
   String toString() {
     final _this = this as RouteMetrics;
-    return 'RouteMetrics(shadeRatio: ${_this.shadeRatio}, quietScore: ${_this.quietScore}, lightingScore: ${_this.lightingScore}, trafficSignalCount: ${_this.trafficSignalCount})';
+    return 'RouteMetrics(shadeRatio: ${_this.shadeRatio}, quietScore: ${_this.quietScore}, lightingScore: ${_this.lightingScore}, trafficSignalCount: ${_this.trafficSignalCount}, stairsMeters: ${_this.stairsMeters}, mappedCrossingCount: ${_this.mappedCrossingCount})';
   }
 }
 
@@ -1167,6 +1202,8 @@ abstract mixin class $RouteMetricsCopyWith<$Res> {
     double? quietScore,
     double? lightingScore,
     int? trafficSignalCount,
+    double? stairsMeters,
+    int? mappedCrossingCount,
   });
 }
 
@@ -1186,6 +1223,8 @@ class _$RouteMetricsCopyWithImpl<$Res> implements $RouteMetricsCopyWith<$Res> {
     Object? quietScore = freezed,
     Object? lightingScore = freezed,
     Object? trafficSignalCount = freezed,
+    Object? stairsMeters = freezed,
+    Object? mappedCrossingCount = freezed,
   }) {
     return _then(
       RouteMetrics(
@@ -1204,6 +1243,14 @@ class _$RouteMetricsCopyWithImpl<$Res> implements $RouteMetricsCopyWith<$Res> {
         trafficSignalCount: freezed == trafficSignalCount
             ? _self.trafficSignalCount
             : trafficSignalCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        stairsMeters: freezed == stairsMeters
+            ? _self.stairsMeters
+            : stairsMeters // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        mappedCrossingCount: freezed == mappedCrossingCount
+            ? _self.mappedCrossingCount
+            : mappedCrossingCount // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );
@@ -1308,6 +1355,8 @@ extension RouteMetricsPatterns on RouteMetrics {
       double? quietScore,
       double? lightingScore,
       int? trafficSignalCount,
+      double? stairsMeters,
+      int? mappedCrossingCount,
     )?
     $default, {
     required TResult orElse(),
@@ -1320,6 +1369,8 @@ extension RouteMetricsPatterns on RouteMetrics {
           _that.quietScore,
           _that.lightingScore,
           _that.trafficSignalCount,
+          _that.stairsMeters,
+          _that.mappedCrossingCount,
         );
       case _:
         return orElse();
@@ -1346,6 +1397,8 @@ extension RouteMetricsPatterns on RouteMetrics {
       double? quietScore,
       double? lightingScore,
       int? trafficSignalCount,
+      double? stairsMeters,
+      int? mappedCrossingCount,
     )
     $default,
   ) {
@@ -1357,6 +1410,8 @@ extension RouteMetricsPatterns on RouteMetrics {
           _that.quietScore,
           _that.lightingScore,
           _that.trafficSignalCount,
+          _that.stairsMeters,
+          _that.mappedCrossingCount,
         );
       case _:
         throw StateError('Unexpected subclass');
@@ -1382,6 +1437,8 @@ extension RouteMetricsPatterns on RouteMetrics {
       double? quietScore,
       double? lightingScore,
       int? trafficSignalCount,
+      double? stairsMeters,
+      int? mappedCrossingCount,
     )?
     $default,
   ) {
@@ -1393,6 +1450,8 @@ extension RouteMetricsPatterns on RouteMetrics {
           _that.quietScore,
           _that.lightingScore,
           _that.trafficSignalCount,
+          _that.stairsMeters,
+          _that.mappedCrossingCount,
         );
       case _:
         return null;
@@ -1408,6 +1467,8 @@ class _RouteMetrics implements RouteMetrics {
     this.quietScore,
     this.lightingScore,
     this.trafficSignalCount,
+    this.stairsMeters,
+    this.mappedCrossingCount,
   });
 
   @override
@@ -1418,6 +1479,10 @@ class _RouteMetrics implements RouteMetrics {
   final double? lightingScore;
   @override
   final int? trafficSignalCount;
+  @override
+  final double? stairsMeters;
+  @override
+  final int? mappedCrossingCount;
 
   /// Create a copy of RouteMetrics
   /// with the given fields replaced by the non-null parameter values.
@@ -1439,7 +1504,11 @@ class _RouteMetrics implements RouteMetrics {
             (identical(other.lightingScore, lightingScore) ||
                 other.lightingScore == lightingScore) &&
             (identical(other.trafficSignalCount, trafficSignalCount) ||
-                other.trafficSignalCount == trafficSignalCount));
+                other.trafficSignalCount == trafficSignalCount) &&
+            (identical(other.stairsMeters, stairsMeters) ||
+                other.stairsMeters == stairsMeters) &&
+            (identical(other.mappedCrossingCount, mappedCrossingCount) ||
+                other.mappedCrossingCount == mappedCrossingCount));
   }
 
   @override
@@ -1450,12 +1519,14 @@ class _RouteMetrics implements RouteMetrics {
       quietScore,
       lightingScore,
       trafficSignalCount,
+      stairsMeters,
+      mappedCrossingCount,
     );
   }
 
   @override
   String toString() {
-    return 'RouteMetrics(shadeRatio: $shadeRatio, quietScore: $quietScore, lightingScore: $lightingScore, trafficSignalCount: $trafficSignalCount)';
+    return 'RouteMetrics(shadeRatio: $shadeRatio, quietScore: $quietScore, lightingScore: $lightingScore, trafficSignalCount: $trafficSignalCount, stairsMeters: $stairsMeters, mappedCrossingCount: $mappedCrossingCount)';
   }
 }
 
@@ -1473,6 +1544,8 @@ abstract mixin class _$RouteMetricsCopyWith<$Res>
     double? quietScore,
     double? lightingScore,
     int? trafficSignalCount,
+    double? stairsMeters,
+    int? mappedCrossingCount,
   });
 }
 
@@ -1493,6 +1566,8 @@ class __$RouteMetricsCopyWithImpl<$Res>
     Object? quietScore = freezed,
     Object? lightingScore = freezed,
     Object? trafficSignalCount = freezed,
+    Object? stairsMeters = freezed,
+    Object? mappedCrossingCount = freezed,
   }) {
     return _then(
       _RouteMetrics(
@@ -1511,6 +1586,14 @@ class __$RouteMetricsCopyWithImpl<$Res>
         trafficSignalCount: freezed == trafficSignalCount
             ? _self.trafficSignalCount
             : trafficSignalCount // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        stairsMeters: freezed == stairsMeters
+            ? _self.stairsMeters
+            : stairsMeters // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        mappedCrossingCount: freezed == mappedCrossingCount
+            ? _self.mappedCrossingCount
+            : mappedCrossingCount // ignore: cast_nullable_to_non_nullable
                   as int?,
       ),
     );

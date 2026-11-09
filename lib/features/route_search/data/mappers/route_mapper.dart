@@ -13,15 +13,17 @@ final class RouteMapper {
     origin: _toCoordinate(query.origin),
     destination: _toCoordinate(query.destination),
     departureAt: query.departureAt.toUtc().toIso8601String(),
+    mode: query.mode.name,
   );
 
   RouteSearchResult toResult(RouteSearchResponseDto dto, RouteQuery query) {
-    if (dto.routes.isEmpty ||
+    final comparison = query.mode == RouteMode.running;
+    if (dto.routes.length != (comparison ? 2 : 1) ||
+        dto.routes.first.mode != RouteMode.fastest.name ||
+        (comparison && dto.routes.last.mode != RouteMode.running.name) ||
         dto.routes.map((route) => route.id).toSet().length !=
             dto.routes.length) {
-      throw const FormatException(
-        'Expected non-empty, uniquely identified routes.',
-      );
+      throw const FormatException('Unexpected route modes or duplicate IDs.');
     }
     final evaluatedAt = DateTime.tryParse(dto.evaluatedAt);
     if (evaluatedAt == null || !dto.evaluatedAt.endsWith('Z')) {
@@ -30,28 +32,52 @@ final class RouteMapper {
     if (!evaluatedAt.isAtSameMomentAs(query.departureAt)) {
       throw const FormatException('Evaluation instant differs from the query.');
     }
+    final routes = dto.routes
+        .map(
+          (route) => _toRoute(route, dto.baselineDurationSeconds, comparison),
+        )
+        .toList(growable: false);
+    final snapping = RouteSnapping(
+      origin: _toSnap(dto.snapping.origin),
+      destination: _toSnap(dto.snapping.destination),
+    );
+    if (comparison &&
+        routes.any(
+          (route) =>
+              route.path.first != snapping.origin.coordinate ||
+              route.path.last != snapping.destination.coordinate,
+        )) {
+      throw const FormatException('The comparison uses different endpoints.');
+    }
     return RouteSearchResult(
       query: query,
-      routes: dto.routes.map(_toRoute).toList(growable: false),
+      routes: routes,
       evaluatedAt: evaluatedAt.toUtc(),
       dataVersion: _nonBlank(dto.dataVersion),
       timeModelVersion: _nonBlank(dto.timeModelVersion),
       routingModelVersion: _nonBlank(dto.routingModelVersion),
       baselineDuration: _duration(dto.baselineDurationSeconds),
-      snapping: RouteSnapping(
-        origin: _toSnap(dto.snapping.origin),
-        destination: _toSnap(dto.snapping.destination),
-      ),
+      snapping: snapping,
       attribution: _nonBlank(dto.attribution),
     );
   }
 
-  RouteCandidate _toRoute(RouteCandidateDto dto) {
-    if (dto.mode != 'fastest' ||
-        dto.geometry.type != 'LineString' ||
+  RouteCandidate _toRoute(
+    RouteCandidateDto dto,
+    int baseline,
+    bool comparison,
+  ) {
+    final mode = RouteMode.values.byName(dto.mode);
+    if (dto.geometry.type != 'LineString' ||
         dto.geometry.coordinates.length < 2 ||
-        dto.additionalDurationSeconds != 0) {
-      throw const FormatException('Invalid fastest walking route.');
+        dto.durationSeconds - baseline != dto.additionalDurationSeconds ||
+        (mode == RouteMode.fastest && dto.additionalDurationSeconds != 0)) {
+      throw const FormatException('Invalid walking route.');
+    }
+    final stairs = dto.metrics.stairsMeters;
+    final crossings = dto.metrics.mappedCrossingCount;
+    if (comparison && (stairs == null || crossings == null || crossings < 0)) {
+      throw const FormatException('Missing running comparison metrics.');
     }
     final signals = dto.metrics.trafficSignalCount;
     if (signals != null && signals < 0) {
@@ -84,6 +110,7 @@ final class RouteMapper {
     final duration = _duration(dto.durationSeconds);
     return RouteCandidate(
       id: _nonBlank(dto.id),
+      mode: mode,
       path: path,
       distanceMeters: distance,
       duration: duration,
@@ -93,6 +120,8 @@ final class RouteMapper {
         quietScore: _ratio(dto.metrics.quietScore),
         lightingScore: _ratio(dto.metrics.lightingScore),
         trafficSignalCount: signals,
+        stairsMeters: stairs == null ? null : _distance(stairs),
+        mappedCrossingCount: crossings,
       ),
       shadeEvaluation: shade,
       guidance: const RouteGuidanceMapper().toEntity(

@@ -48,4 +48,4 @@ final class ActiveRouteProvider
   }
 }
 
-String _$activeRouteHash() => r'1cf8c2c778b2c8085a45ca9c70a50aba9cb8d5b8';
+String _$activeRouteHash() => r'4e976da21373d56bd4ed7e76b9635e8b25763d0c';

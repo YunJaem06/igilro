@@ -414,7 +414,7 @@ extension RouteSearchResultPatterns on RouteSearchResult {
 
 /// @nodoc
 
-class _RouteSearchResult implements RouteSearchResult {
+class _RouteSearchResult extends RouteSearchResult {
   const _RouteSearchResult({
     required this.query,
     required List<RouteCandidate> routes,
@@ -425,7 +425,8 @@ class _RouteSearchResult implements RouteSearchResult {
     required this.baselineDuration,
     required this.snapping,
     required this.attribution,
-  }) : _routes = routes;
+  }) : _routes = routes,
+       super._();
 
   @override
   final RouteQuery query;

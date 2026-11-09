@@ -137,6 +137,8 @@ class _HomePageState extends ConsumerState<HomePage>
     final selection = ref.read(routeSelectionProvider).endpoints;
     final model = _prediction();
     final pair = ref.read(routeComparisonProvider).asData?.value;
+    final kind = ref.read(routeSearchKindProvider);
+    final general = ref.read(routeSearchProvider).asData?.value;
     ref.read(mapProvider.notifier).framePoints([
       ...?_route()?.path,
       if (ref.read(routeSearchKindProvider) == RouteSearchKind.prediction &&
@@ -146,6 +148,8 @@ class _HomePageState extends ConsumerState<HomePage>
             .routes
             .first
             .path,
+      if (kind == RouteSearchKind.running && general != null)
+        for (final route in general.routes) ...route.path,
       if (selection.origin != null) selection.origin!.coordinate,
       if (selection.destination != null) selection.destination!.coordinate,
     ]);
@@ -303,12 +307,15 @@ class _HomePageState extends ConsumerState<HomePage>
         ? ref.watch(predictionCoverageProvider).asData?.value
         : null;
     final prediction = pair?.forMode(options.mode) ?? single;
-    final path = kind == RouteSearchKind.general
-        ? general?.routes.first.path ?? <GeoCoordinate>[]
-        : prediction?.routes.first.path ?? <GeoCoordinate>[];
-    final alternative = kind == RouteSearchKind.prediction && pair != null
-        ? pair.otherThan(options.mode).routes.first.path
-        : <GeoCoordinate>[];
+    final path = active?.navigation.path ?? <GeoCoordinate>[];
+    final runningMode = ref.watch(runningRouteSelectionProvider);
+    final alternative = switch (kind) {
+      RouteSearchKind.prediction when pair != null =>
+        pair.otherThan(options.mode).routes.first.path,
+      RouteSearchKind.running when general != null =>
+        general.routes.firstWhere((route) => route.mode != runningMode).path,
+      _ => <GeoCoordinate>[],
+    };
     final routeSegments = kind == RouteSearchKind.prediction
         ? prediction?.routes.first.shadeSegments
                   .map(

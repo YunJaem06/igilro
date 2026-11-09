@@ -38,7 +38,9 @@ ActiveRoute? activeRoute(Ref ref) {
   }
   final result = ref.watch(routeSearchProvider).asData?.value;
   if (result == null || result.routes.isEmpty) return null;
-  final route = result.routes.first;
+  final route = kind == RouteSearchKind.running
+      ? result.routeFor(ref.watch(runningRouteSelectionProvider))
+      : result.routes.first;
   return ActiveRoute(
     key: (kind, result.query, result.evaluatedAt, route.id),
     navigation: NavigationRoute(

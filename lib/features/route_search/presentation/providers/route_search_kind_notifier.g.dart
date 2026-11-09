@@ -61,3 +61,56 @@ abstract class _$RouteSearchKindNotifier extends $Notifier<RouteSearchKind> {
     return element.handleCreate(ref, build);
   }
 }
+
+@ProviderFor(RunningRouteSelection)
+final runningRouteSelectionProvider = RunningRouteSelectionProvider._();
+
+final class RunningRouteSelectionProvider
+    extends $NotifierProvider<RunningRouteSelection, RouteMode> {
+  RunningRouteSelectionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'runningRouteSelectionProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$runningRouteSelectionHash();
+
+  @$internal
+  @override
+  RunningRouteSelection create() => RunningRouteSelection();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RouteMode value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RouteMode>(value),
+    );
+  }
+}
+
+String _$runningRouteSelectionHash() =>
+    r'92a71f548cd4b679962cacd217965f8cc45ddc66';
+
+abstract class _$RunningRouteSelection extends $Notifier<RouteMode> {
+  RouteMode build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<RouteMode, RouteMode>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<RouteMode, RouteMode>,
+              RouteMode,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

@@ -36,9 +36,10 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
       state = AsyncData(result);
 
   Future<void> search({DateTime? departureAt}) async {
+    final kind = ref.read(routeSearchKindProvider);
     if (state.isLoading ||
         ref.read(routeSearchCooldownProvider) > 0 ||
-        ref.read(routeSearchKindProvider) != RouteSearchKind.general) {
+        kind == RouteSearchKind.prediction) {
       return;
     }
     final endpoints = ref.read(routeSelectionProvider).endpoints;
@@ -50,6 +51,7 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
     final result = await useCase(
       endpoints,
       departureAt: departureAt ?? DateTime.now(),
+      mode: kind.walkingMode,
     );
     if (!ref.mounted || revision != _requestRevision) return;
     _cancelPending = null;
