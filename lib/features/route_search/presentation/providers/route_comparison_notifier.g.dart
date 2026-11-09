@@ -34,7 +34,7 @@ final class RouteComparisonNotifierProvider
 }
 
 String _$routeComparisonNotifierHash() =>
-    r'7c145d6beb8767bc6865f847e2dc3b882a2b35d2';
+    r'e8b29eca3c10acc17c5351e6e068783f3c9d6e49';
 
 abstract class _$RouteComparisonNotifier
     extends $AsyncNotifier<RouteComparison?> {

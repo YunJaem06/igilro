@@ -15,6 +15,7 @@ import '../../features/route_search/domain/usecases/compare_route_predictions_us
 import '../../features/route_search/presentation/providers/route_comparison_notifier.dart';
 import '../../features/route_search/presentation/providers/route_prediction_providers.dart';
 import '../../features/route_search/presentation/providers/route_search_kind_notifier.dart';
+import '../../features/route_search/presentation/providers/route_search_cooldown_notifier.dart';
 import '../../features/route_search/presentation/providers/route_search_notifier.dart';
 import '../../features/route_search/presentation/providers/route_search_providers.dart';
 import '../../features/route_search/presentation/providers/route_selection_notifier.dart';
@@ -69,6 +70,7 @@ class NavigationRerouteNotifier extends _$NavigationRerouteNotifier {
     final guidance = ref.read(navigationProvider);
     final retry = state.hasError && guidance.status == GuidanceStatus.paused;
     if (state.isLoading ||
+        ref.read(routeSearchCooldownProvider) > 0 ||
         !guidance.active ||
         guidance.isPreview ||
         !(retry ||
@@ -160,6 +162,7 @@ class NavigationRerouteNotifier extends _$NavigationRerouteNotifier {
     _cancelPending = null;
     switch (result) {
       case Failed<T>(:final failure):
+        ref.read(routeSearchCooldownProvider.notifier).apply(failure);
         state = AsyncError(failure, StackTrace.current);
       case Success<T>(:final value):
         _applyingRoute = true;

@@ -9,6 +9,7 @@ import '../../../../core/error/failure.dart';
 import '../../domain/entities/route_comparison.dart';
 import '../../domain/usecases/compare_route_predictions_use_case.dart';
 import 'route_prediction_providers.dart';
+import 'route_search_cooldown_notifier.dart';
 import 'route_selection_notifier.dart';
 import 'route_search_kind_notifier.dart';
 
@@ -18,6 +19,9 @@ part 'route_comparison_notifier.g.dart';
 class RouteComparisonNotifier extends _$RouteComparisonNotifier {
   int _revision = 0;
   CompareRoutePredictionsUseCase? _pending;
+
+  bool get hasFastestToCompare => _pending?.hasFastestToCompare ?? false;
+
   @override
   FutureOr<RouteComparison?> build() {
     ref.watch(routeSelectionProvider.select((value) => value.endpoints));
@@ -34,25 +38,38 @@ class RouteComparisonNotifier extends _$RouteComparisonNotifier {
     return null;
   }
 
-  void applyRerouteResult(RouteComparison result) => state = AsyncData(result);
+  void applyRerouteResult(RouteComparison result) {
+    _revision++;
+    _pending?.cancel();
+    _pending = null;
+    state = AsyncData(result);
+  }
 
   Future<void> search() async {
     if (state.isLoading ||
+        ref.read(routeSearchCooldownProvider) > 0 ||
         ref.read(routeSearchKindProvider) != RouteSearchKind.prediction) {
       return;
     }
     final revision = ++_revision;
-    final useCase = CompareRoutePredictionsUseCase(
-      ref.read(searchRoutePredictionUseCaseProvider),
-    );
+    final useCase =
+        _pending ??
+        CompareRoutePredictionsUseCase(
+          ref.read(searchRoutePredictionUseCaseProvider),
+        );
     _pending = useCase;
     state = const AsyncLoading();
-    final result = await useCase(
-      ref.read(routeSelectionProvider).endpoints,
-      departureAt: ref.read(routePredictionOptionsProvider).departureAt,
-    );
+    final result = useCase.canRetry
+        ? await useCase.retry()
+        : await useCase(
+            ref.read(routeSelectionProvider).endpoints,
+            departureAt: ref.read(routePredictionOptionsProvider).departureAt,
+          );
     if (!ref.mounted || revision != _revision) return;
-    _pending = null;
+    if (!useCase.canRetry) _pending = null;
+    if (result case Failed<RouteComparison>(:final failure)) {
+      ref.read(routeSearchCooldownProvider.notifier).apply(failure);
+    }
     state = switch (result) {
       Success<RouteComparison>(:final value) => AsyncData(value),
       Failed<RouteComparison>(failure: Failure(type: FailureType.cancelled)) =>

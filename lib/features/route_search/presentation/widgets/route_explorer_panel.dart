@@ -9,6 +9,7 @@ import '../providers/route_comparison_notifier.dart';
 import '../providers/route_prediction_notifier.dart';
 import '../providers/route_prediction_providers.dart';
 import '../providers/route_search_kind_notifier.dart';
+import '../providers/route_search_cooldown_notifier.dart';
 import '../providers/route_search_notifier.dart';
 import '../providers/route_selection_notifier.dart';
 import 'route_result_card.dart';
@@ -46,6 +47,11 @@ class RouteExplorerPanel extends ConsumerWidget {
         ? comparisonState.error ?? predictionState.error
         : generalState.error;
     final hasResult = isPrediction ? model != null : general != null;
+    final retrySeconds = ref.watch(routeSearchCooldownProvider);
+    final hasFastestToCompare =
+        isPrediction &&
+        comparisonState.hasError &&
+        ref.read(routeComparisonProvider.notifier).hasFastestToCompare;
     final canSearch = ref.watch(routeSelectionProvider).endpoints.canSearch;
     final samePoint = ref.watch(routeSelectionProvider).endpoints.isSamePoint;
     final content = Column(
@@ -58,13 +64,15 @@ class RouteExplorerPanel extends ConsumerWidget {
               IconButton(
                 tooltip: '경로 다시 검색',
                 icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  if (isPrediction) {
-                    ref.read(routeComparisonProvider.notifier).search();
-                  } else {
-                    ref.read(routeSearchProvider.notifier).search();
-                  }
-                },
+                onPressed: retrySeconds > 0
+                    ? null
+                    : () {
+                        if (isPrediction) {
+                          ref.read(routeComparisonProvider.notifier).search();
+                        } else {
+                          ref.read(routeSearchProvider.notifier).search();
+                        }
+                      },
               ),
             Expanded(
               child: Wrap(
@@ -122,6 +130,11 @@ class RouteExplorerPanel extends ConsumerWidget {
               routeErrorMessage(error),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
+          ),
+        if (hasFastestToCompare)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('빠른 길을 받았어요. 같은 조건으로 그늘길을 이어서 비교할 수 있어요.'),
           ),
         if (error case Failure(code: 'OUTSIDE_SUPPORTED_AREA'))
           TextButton.icon(
@@ -236,7 +249,7 @@ class RouteExplorerPanel extends ConsumerWidget {
             ],
           )
         : FilledButton.icon(
-            onPressed: canSearch && !loading
+            onPressed: canSearch && !loading && retrySeconds == 0
                 ? () {
                     if (isPrediction) {
                       ref.read(routeComparisonProvider.notifier).search();
@@ -247,7 +260,11 @@ class RouteExplorerPanel extends ConsumerWidget {
                 : null,
             icon: const Icon(Icons.search),
             label: Text(
-              error != null
+              retrySeconds > 0
+                  ? '$retrySeconds초 후 다시 검색'
+                  : hasFastestToCompare
+                  ? '그늘길 다시 비교'
+                  : error != null
                   ? '다시 검색'
                   : isPrediction
                   ? '그늘길 비교'
@@ -475,6 +492,8 @@ String routeErrorMessage(Object error) => switch (error) {
     '경로 자료를 준비하고 있어요. 잠시 후 다시 시도해 주세요.',
   Failure(type: FailureType.network) => '서버에 연결하지 못했어요. 연결 상태를 확인해 주세요.',
   Failure(type: FailureType.timeout) => '검색이 늦어지고 있어요. 다시 시도해 주세요.',
+  Failure(type: FailureType.rateLimited) => '요청이 많아요. 잠시 후 다시 시도해 주세요.',
+  Failure(type: FailureType.serverBusy) => '서버에서 경로를 계산 중이에요. 잠시 후 다시 시도해 주세요.',
   Failure(code: 'COMPARISON_CHANGED') => '비교 중 자료가 바뀌었어요. 다시 검색해 주세요.',
   _ => '경로를 찾지 못했어요. 위치와 요청 조건을 확인해 주세요.',
 };

@@ -68,6 +68,41 @@ void main() {
     );
   });
   test(
+    'resuming shade validates the stored fastest against the new snapshot',
+    () async {
+      var limited = true;
+      final repository = FakePredictionRepository()
+        ..handler = (query) async {
+          if (query.mode == RoutePredictionMode.fastest) {
+            return Result.success(predictionFor(query));
+          }
+          if (limited) {
+            return const Result.failure(Failure(type: FailureType.rateLimited));
+          }
+          return Result.success(
+            predictionFor(query).copyWith(dataVersion: 'changed'),
+          );
+        };
+      final useCase = CompareRoutePredictionsUseCase(
+        SearchRoutePredictionUseCase(repository),
+      );
+      await useCase(endpoints, departureAt: predictionDeparture);
+      expect(useCase.hasFastestToCompare, isTrue);
+      limited = false;
+      final result = await useCase.retry();
+      expect(
+        (result as Failed<RouteComparison>).failure.code,
+        'COMPARISON_CHANGED',
+      );
+      expect(useCase.canRetry, isFalse);
+      expect(repository.queries.map((query) => query.mode), [
+        RoutePredictionMode.fastest,
+        RoutePredictionMode.shade,
+        RoutePredictionMode.shade,
+      ]);
+    },
+  );
+  test(
     'a shade failure does not masquerade as successful shade guidance',
     () async {
       final repository = FakePredictionRepository()

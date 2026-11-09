@@ -7,6 +7,7 @@ import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/entities/model_route_prediction.dart';
 import 'route_prediction_providers.dart';
+import 'route_search_cooldown_notifier.dart';
 import 'route_search_kind_notifier.dart';
 import 'route_selection_notifier.dart';
 
@@ -33,6 +34,7 @@ class RoutePredictionNotifier extends _$RoutePredictionNotifier {
 
   Future<void> search() async {
     if (state.isLoading ||
+        ref.read(routeSearchCooldownProvider) > 0 ||
         ref.read(routeSearchKindProvider) != RouteSearchKind.prediction) {
       return;
     }
@@ -49,6 +51,9 @@ class RoutePredictionNotifier extends _$RoutePredictionNotifier {
     );
     if (!ref.mounted || revision != _revision) return;
     _cancelPending = null;
+    if (result case Failed<ModelRoutePrediction>(:final failure)) {
+      ref.read(routeSearchCooldownProvider.notifier).apply(failure);
+    }
     state = switch (result) {
       Success<ModelRoutePrediction>(:final value) => AsyncData(value),
       Failed<ModelRoutePrediction>(

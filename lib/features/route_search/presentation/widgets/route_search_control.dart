@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/error/failure.dart';
+import '../providers/route_search_cooldown_notifier.dart';
 import '../providers/route_search_notifier.dart';
 import '../providers/route_selection_notifier.dart';
 import '../providers/route_search_kind_notifier.dart';
@@ -18,9 +19,11 @@ class RouteSearchControl extends ConsumerWidget {
         ref.watch(routeSearchKindProvider) != RouteSearchKind.general) {
       return const SizedBox.shrink();
     }
+    final retrySeconds = ref.watch(routeSearchCooldownProvider);
     final canSearch =
         selection.endpoints.canSearch &&
         selection.selecting == null &&
+        retrySeconds == 0 &&
         !state.isLoading;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,6 +63,8 @@ class RouteSearchControl extends ConsumerWidget {
           label: Text(
             state.isLoading
                 ? '검색 중'
+                : retrySeconds > 0
+                ? '$retrySeconds초 후 다시 검색'
                 : state.hasError
                 ? '다시 검색'
                 : '경로 검색',
@@ -81,6 +86,7 @@ String _messageFor(Object error) => switch (error) {
   Failure(type: FailureType.network) => '서버에 연결하지 못했어요. 네트워크 연결을 확인해 주세요.',
   Failure(type: FailureType.timeout) => '경로 검색이 늦어지고 있어요. 다시 시도해 주세요.',
   Failure(type: FailureType.rateLimited) => '요청이 많아요. 잠시 후 다시 시도해 주세요.',
+  Failure(type: FailureType.serverBusy) => '서버에서 경로를 계산 중이에요. 잠시 후 다시 시도해 주세요.',
   Failure(type: FailureType.invalidData) => '경로 정보를 확인하지 못했어요. 다시 시도해 주세요.',
   Failure(type: FailureType.notFound) => '경로 검색 서비스에 연결하지 못했어요.',
   _ => '경로를 검색하지 못했어요. 잠시 후 다시 시도해 주세요.',

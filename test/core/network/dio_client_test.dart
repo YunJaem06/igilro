@@ -1,3 +1,5 @@
+import 'dart:io' show HttpDate;
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:igilro/core/config/app_config.dart';
@@ -138,6 +140,68 @@ void main() {
       ),
     );
   });
+
+  for (final (status, code, type, header, expectedDelay) in [
+    (
+      429,
+      'TOO_MANY_REQUESTS',
+      FailureType.rateLimited,
+      ' 2 ',
+      const Duration(seconds: 2),
+    ),
+    (
+      503,
+      'ROUTE_SEARCH_BUSY',
+      FailureType.serverBusy,
+      '3',
+      const Duration(seconds: 3),
+    ),
+    (503, 'PREDICTION_DATA_UNAVAILABLE', FailureType.server, '3', null),
+    (500, 'ROUTE_SEARCH_BUSY', FailureType.server, '3', null),
+    (429, 'TOO_MANY_REQUESTS', FailureType.rateLimited, '-1', null),
+    (
+      429,
+      'TOO_MANY_REQUESTS',
+      FailureType.rateLimited,
+      '9999999999999999999999',
+      null,
+    ),
+    (
+      503,
+      'ROUTE_SEARCH_BUSY',
+      FailureType.serverBusy,
+      HttpDate.format(DateTime.utc(2000)),
+      Duration.zero,
+    ),
+  ]) {
+    test('HTTP $status $code handles Retry-After $header', () async {
+      dio.httpClientAdapter = FakeHttpClientAdapter(
+        (_) => ResponseBody.fromString(
+          '{"code":"$code","requestId":"request-1"}',
+          status,
+          headers: {
+            Headers.contentTypeHeader: [Headers.jsonContentType],
+            'Retry-After': [header],
+          },
+        ),
+      );
+      await expectLater(
+        client.post<Object>('/api/v1/routes/search'),
+        throwsA(
+          isA<ApiException>().having(
+            (exception) => exception.failure,
+            'failure',
+            Failure(
+              type: type,
+              code: code,
+              requestId: 'request-1',
+              retryAfter: expectedDelay,
+            ),
+          ),
+        ),
+      );
+    });
+  }
 
   test('malformed JSON in a successful response becomes invalidData', () async {
     dio.httpClientAdapter = FakeHttpClientAdapter(

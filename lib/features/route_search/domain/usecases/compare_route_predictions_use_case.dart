@@ -5,45 +5,78 @@ import '../entities/route_comparison.dart';
 import '../entities/route_endpoints.dart';
 import 'search_route_prediction_use_case.dart';
 
+typedef _ComparisonAttempt = ({
+  RouteEndpoints endpoints,
+  DateTime departureAt,
+  ModelRoutePrediction? fastest,
+});
+
 final class CompareRoutePredictionsUseCase {
   CompareRoutePredictionsUseCase(this._search);
   final SearchRoutePredictionUseCase _search;
+  static const _cancelled = Result<RouteComparison>.failure(
+    Failure(type: FailureType.cancelled),
+  );
   int _generation = 0;
+  _ComparisonAttempt? _retry;
+
+  bool get canRetry => _retry != null;
+  bool get hasFastestToCompare => _retry?.fastest != null;
+
   void cancel() {
     _generation++;
+    _retry = null;
     _search.cancel();
   }
 
   Future<Result<RouteComparison>> call(
     RouteEndpoints endpoints, {
     DateTime? departureAt,
-  }) async {
+  }) => _compare((
+    endpoints: endpoints,
+    departureAt: (departureAt ?? DateTime.now()).toUtc(),
+    fastest: null,
+  ));
+
+  Future<Result<RouteComparison>> retry() async {
+    final attempt = _retry;
+    return attempt == null ? _cancelled : _compare(attempt);
+  }
+
+  Future<Result<RouteComparison>> _compare(_ComparisonAttempt attempt) async {
     cancel();
     final generation = _generation;
-    final instant = (departureAt ?? DateTime.now()).toUtc();
-    final fastest = await _search(
-      endpoints,
-      mode: RoutePredictionMode.fastest,
-      departureAt: instant,
-    );
-    if (generation != _generation) {
-      return const Result.failure(Failure(type: FailureType.cancelled));
-    }
-    if (fastest case Failed<ModelRoutePrediction>(:final failure)) {
-      return Result.failure(failure);
+    var fastest = attempt.fastest;
+    if (fastest == null) {
+      final result = await _search(
+        attempt.endpoints,
+        mode: RoutePredictionMode.fastest,
+        departureAt: attempt.departureAt,
+      );
+      if (generation != _generation) return _cancelled;
+      if (result case Failed<ModelRoutePrediction>(:final failure)) {
+        if (failure.isThrottled) _retry = attempt;
+        return Result.failure(failure);
+      }
+      fastest = (result as Success<ModelRoutePrediction>).value;
     }
     final shade = await _search(
-      endpoints,
+      attempt.endpoints,
       mode: RoutePredictionMode.shade,
-      departureAt: instant,
+      departureAt: attempt.departureAt,
     );
-    if (generation != _generation) {
-      return const Result.failure(Failure(type: FailureType.cancelled));
-    }
+    if (generation != _generation) return _cancelled;
     if (shade case Failed<ModelRoutePrediction>(:final failure)) {
+      if (failure.isThrottled) {
+        _retry = (
+          endpoints: attempt.endpoints,
+          departureAt: attempt.departureAt,
+          fastest: fastest,
+        );
+      }
       return Result.failure(failure);
     }
-    final a = (fastest as Success<ModelRoutePrediction>).value;
+    final a = fastest;
     final b = (shade as Success<ModelRoutePrediction>).value;
     if (a.evaluatedAt != b.evaluatedAt ||
         a.dataVersion != b.dataVersion ||

@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/error/failure.dart';
 import '../../../../core/error/result.dart';
 import '../../domain/entities/route_search_result.dart';
+import 'route_search_cooldown_notifier.dart';
 import 'route_search_providers.dart';
 import 'route_search_kind_notifier.dart';
 import 'route_selection_notifier.dart';
@@ -36,6 +37,7 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
 
   Future<void> search({DateTime? departureAt}) async {
     if (state.isLoading ||
+        ref.read(routeSearchCooldownProvider) > 0 ||
         ref.read(routeSearchKindProvider) != RouteSearchKind.general) {
       return;
     }
@@ -51,6 +53,9 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
     );
     if (!ref.mounted || revision != _requestRevision) return;
     _cancelPending = null;
+    if (result case Failed<RouteSearchResult>(:final failure)) {
+      ref.read(routeSearchCooldownProvider.notifier).apply(failure);
+    }
     state = switch (result) {
       Success<RouteSearchResult>(:final value) => AsyncData(value),
       Failed<RouteSearchResult>(

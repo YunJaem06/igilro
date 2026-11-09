@@ -142,6 +142,31 @@ void main() {
     );
   }
 
+  testWidgets('429 disables walking search for the Retry-After delay', (
+    tester,
+  ) async {
+    selectEndpoints();
+    repository.response = const Result.failure(
+      Failure(type: FailureType.rateLimited, retryAfter: Duration(seconds: 2)),
+    );
+    await mount(tester);
+    await tester.tap(find.text('경로 검색'));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, '2초 후 다시 검색'))
+          .onPressed,
+      isNull,
+    );
+    await tester.pump(const Duration(seconds: 2));
+    expect(repository.queries.length, 1);
+    repository.response = null;
+    await tester.tap(find.text('다시 검색'));
+    await tester.pumpAndSettle();
+    expect(repository.queries.length, 2);
+    expect(find.text('22분 · 1.7km'), findsOneWidget);
+  });
+
   testWidgets(
     'a cancelled map preview preserves results, committed input changes clear them',
     (tester) async {

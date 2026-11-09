@@ -17,6 +17,7 @@ mixin _$Failure {
   FailureType get type;
   String? get code;
   String? get requestId;
+  Duration? get retryAfter;
 
   /// Create a copy of Failure
   /// with the given fields replaced by the non-null parameter values.
@@ -34,19 +35,27 @@ mixin _$Failure {
             (identical(other.type, _this.type) || other.type == _this.type) &&
             (identical(other.code, _this.code) || other.code == _this.code) &&
             (identical(other.requestId, _this.requestId) ||
-                other.requestId == _this.requestId));
+                other.requestId == _this.requestId) &&
+            (identical(other.retryAfter, _this.retryAfter) ||
+                other.retryAfter == _this.retryAfter));
   }
 
   @override
   int get hashCode {
     final _this = this as Failure;
-    return Object.hash(runtimeType, _this.type, _this.code, _this.requestId);
+    return Object.hash(
+      runtimeType,
+      _this.type,
+      _this.code,
+      _this.requestId,
+      _this.retryAfter,
+    );
   }
 
   @override
   String toString() {
     final _this = this as Failure;
-    return 'Failure(type: ${_this.type}, code: ${_this.code}, requestId: ${_this.requestId})';
+    return 'Failure(type: ${_this.type}, code: ${_this.code}, requestId: ${_this.requestId}, retryAfter: ${_this.retryAfter})';
   }
 }
 
@@ -55,7 +64,12 @@ abstract mixin class $FailureCopyWith<$Res> {
   factory $FailureCopyWith(Failure value, $Res Function(Failure) _then) =
       _$FailureCopyWithImpl;
   @useResult
-  $Res call({FailureType type, String? code, String? requestId});
+  $Res call({
+    FailureType type,
+    String? code,
+    String? requestId,
+    Duration? retryAfter,
+  });
 }
 
 /// @nodoc
@@ -73,6 +87,7 @@ class _$FailureCopyWithImpl<$Res> implements $FailureCopyWith<$Res> {
     Object? type = null,
     Object? code = freezed,
     Object? requestId = freezed,
+    Object? retryAfter = freezed,
   }) {
     return _then(
       Failure(
@@ -88,6 +103,10 @@ class _$FailureCopyWithImpl<$Res> implements $FailureCopyWith<$Res> {
             ? _self.requestId
             : requestId // ignore: cast_nullable_to_non_nullable
                   as String?,
+        retryAfter: freezed == retryAfter
+            ? _self.retryAfter
+            : retryAfter // ignore: cast_nullable_to_non_nullable
+                  as Duration?,
       ),
     );
   }
@@ -186,14 +205,24 @@ extension FailurePatterns on Failure {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(FailureType type, String? code, String? requestId)?
+    TResult Function(
+      FailureType type,
+      String? code,
+      String? requestId,
+      Duration? retryAfter,
+    )?
     $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _Failure() when $default != null:
-        return $default(_that.type, _that.code, _that.requestId);
+        return $default(
+          _that.type,
+          _that.code,
+          _that.requestId,
+          _that.retryAfter,
+        );
       case _:
         return orElse();
     }
@@ -214,13 +243,23 @@ extension FailurePatterns on Failure {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(FailureType type, String? code, String? requestId)
+    TResult Function(
+      FailureType type,
+      String? code,
+      String? requestId,
+      Duration? retryAfter,
+    )
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _Failure():
-        return $default(_that.type, _that.code, _that.requestId);
+        return $default(
+          _that.type,
+          _that.code,
+          _that.requestId,
+          _that.retryAfter,
+        );
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -240,13 +279,23 @@ extension FailurePatterns on Failure {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(FailureType type, String? code, String? requestId)?
+    TResult? Function(
+      FailureType type,
+      String? code,
+      String? requestId,
+      Duration? retryAfter,
+    )?
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _Failure() when $default != null:
-        return $default(_that.type, _that.code, _that.requestId);
+        return $default(
+          _that.type,
+          _that.code,
+          _that.requestId,
+          _that.retryAfter,
+        );
       case _:
         return null;
     }
@@ -255,8 +304,13 @@ extension FailurePatterns on Failure {
 
 /// @nodoc
 
-class _Failure implements Failure {
-  const _Failure({required this.type, this.code, this.requestId});
+class _Failure extends Failure {
+  const _Failure({
+    required this.type,
+    this.code,
+    this.requestId,
+    this.retryAfter,
+  }) : super._();
 
   @override
   final FailureType type;
@@ -264,6 +318,8 @@ class _Failure implements Failure {
   final String? code;
   @override
   final String? requestId;
+  @override
+  final Duration? retryAfter;
 
   /// Create a copy of Failure
   /// with the given fields replaced by the non-null parameter values.
@@ -281,17 +337,19 @@ class _Failure implements Failure {
             (identical(other.type, type) || other.type == type) &&
             (identical(other.code, code) || other.code == code) &&
             (identical(other.requestId, requestId) ||
-                other.requestId == requestId));
+                other.requestId == requestId) &&
+            (identical(other.retryAfter, retryAfter) ||
+                other.retryAfter == retryAfter));
   }
 
   @override
   int get hashCode {
-    return Object.hash(runtimeType, type, code, requestId);
+    return Object.hash(runtimeType, type, code, requestId, retryAfter);
   }
 
   @override
   String toString() {
-    return 'Failure(type: $type, code: $code, requestId: $requestId)';
+    return 'Failure(type: $type, code: $code, requestId: $requestId, retryAfter: $retryAfter)';
   }
 }
 
@@ -301,7 +359,12 @@ abstract mixin class _$FailureCopyWith<$Res> implements $FailureCopyWith<$Res> {
       __$FailureCopyWithImpl;
   @override
   @useResult
-  $Res call({FailureType type, String? code, String? requestId});
+  $Res call({
+    FailureType type,
+    String? code,
+    String? requestId,
+    Duration? retryAfter,
+  });
 }
 
 /// @nodoc
@@ -319,6 +382,7 @@ class __$FailureCopyWithImpl<$Res> implements _$FailureCopyWith<$Res> {
     Object? type = null,
     Object? code = freezed,
     Object? requestId = freezed,
+    Object? retryAfter = freezed,
   }) {
     return _then(
       _Failure(
@@ -334,6 +398,10 @@ class __$FailureCopyWithImpl<$Res> implements _$FailureCopyWith<$Res> {
             ? _self.requestId
             : requestId // ignore: cast_nullable_to_non_nullable
                   as String?,
+        retryAfter: freezed == retryAfter
+            ? _self.retryAfter
+            : retryAfter // ignore: cast_nullable_to_non_nullable
+                  as Duration?,
       ),
     );
   }

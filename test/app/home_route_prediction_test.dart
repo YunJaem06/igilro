@@ -186,6 +186,90 @@ void main() {
     await tap(tester, '다시 검색');
     expect(find.text('예측 그늘 68.6%'), findsOneWidget);
   });
+
+  testWidgets(
+    'busy shade waits and retries only shade at the original instant',
+    (tester) async {
+      await mount(tester);
+      container
+          .read(routePredictionOptionsProvider.notifier)
+          .setDepartureAt(null);
+      await tester.pumpAndSettle();
+      var busy = true;
+      repository.handler = (query) async =>
+          busy && query.mode == RoutePredictionMode.shade
+          ? const Result.failure(
+              Failure(
+                type: FailureType.serverBusy,
+                code: 'ROUTE_SEARCH_BUSY',
+                retryAfter: Duration(seconds: 2),
+              ),
+            )
+          : Result.success(predictionFor(query));
+      await tap(tester, '그늘길 비교');
+      expect(find.textContaining('빠른 길을 받았어요'), findsOneWidget);
+      expect(find.textContaining('서버에서 경로를 계산 중'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, '2초 후 다시 검색'),
+            )
+            .onPressed,
+        isNull,
+      );
+      final notifier = container.read(routeComparisonProvider.notifier);
+      await notifier.search();
+      expect(repository.queries.length, 2);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('1초 후 다시 검색'), findsOneWidget);
+      busy = false;
+      await tester.pump(const Duration(seconds: 1));
+      expect(repository.queries.length, 2);
+      await tap(tester, '그늘길 다시 비교');
+      expect(repository.queries.map((query) => query.mode), [
+        RoutePredictionMode.fastest,
+        RoutePredictionMode.shade,
+        RoutePredictionMode.shade,
+      ]);
+      expect(repository.queries.last, repository.queries[1]);
+      expect(repository.queries.first.departureAt, isNotNull);
+      expect(
+        repository.queries.first.departureAt,
+        repository.queries.last.departureAt,
+      );
+      expect(find.text('안내 시작'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'changing departure discards the fastest route from a limited comparison',
+    (tester) async {
+      await mount(tester);
+      repository.handler = (query) async =>
+          query.mode == RoutePredictionMode.shade
+          ? const Result.failure(
+              Failure(type: FailureType.rateLimited, code: 'TOO_MANY_REQUESTS'),
+            )
+          : Result.success(predictionFor(query));
+      await tap(tester, '그늘길 비교');
+      expect(find.text('1초 후 다시 검색'), findsOneWidget);
+      final nextDeparture = predictionDeparture.add(
+        const Duration(minutes: 10),
+      );
+      container
+          .read(routePredictionOptionsProvider.notifier)
+          .setDepartureAt(nextDeparture);
+      repository.handler = null;
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.textContaining('빠른 길을 받았어요'), findsNothing);
+      expect(repository.queries.length, 2);
+      await tap(tester, '그늘길 비교');
+      expect(repository.queries.length, 4);
+      expect(repository.queries[2].mode, RoutePredictionMode.fastest);
+      expect(repository.queries[2].departureAt, nextDeparture);
+      expect(repository.queries[3].departureAt, nextDeparture);
+    },
+  );
   testWidgets('explicit preview stops and removes its virtual location', (
     tester,
   ) async {

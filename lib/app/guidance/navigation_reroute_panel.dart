@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/error/failure.dart';
 import '../../features/navigation/presentation/navigation_notifier.dart';
+import '../../features/route_search/presentation/providers/route_search_cooldown_notifier.dart';
 import '../../features/route_search/presentation/widgets/route_explorer_panel.dart';
 import 'navigation_reroute_notifier.dart';
 
@@ -14,6 +15,7 @@ class NavigationReroutePanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final failure = error;
+    final retrySeconds = ref.watch(routeSearchCooldownProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -42,8 +44,10 @@ class NavigationReroutePanel extends ConsumerWidget {
         const SizedBox(height: 8),
         if (failure != null)
           FilledButton(
-            onPressed: ref.read(navigationRerouteProvider.notifier).reroute,
-            child: const Text('다시 시도'),
+            onPressed: retrySeconds == 0
+                ? ref.read(navigationRerouteProvider.notifier).reroute
+                : null,
+            child: Text(retrySeconds > 0 ? '$retrySeconds초 후 다시 검색' : '다시 시도'),
           ),
         TextButton(
           onPressed: ref.read(navigationProvider.notifier).stop,

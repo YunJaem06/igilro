@@ -26,6 +26,7 @@ import '../../features/route_search/presentation/providers/route_prediction_noti
 import '../../features/route_search/presentation/providers/route_prediction_providers.dart';
 import '../../features/route_search/presentation/providers/route_comparison_notifier.dart';
 import '../../features/route_search/presentation/providers/route_search_kind_notifier.dart';
+import '../../features/route_search/presentation/providers/route_search_cooldown_notifier.dart';
 import '../../features/route_search/presentation/state/route_selection_state.dart';
 import '../../features/route_search/presentation/widgets/route_explorer_panel.dart';
 import '../debug/prediction_pilot_button.dart';
@@ -285,6 +286,9 @@ class _HomePageState extends ConsumerState<HomePage>
     final general = ref.watch(routeSearchProvider).asData?.value;
     final nav = ref.watch(navigationProvider);
     final reroute = ref.watch(navigationRerouteProvider);
+    final searchCoolingDown = ref.watch(
+      routeSearchCooldownProvider.select((seconds) => seconds > 0),
+    );
     final active = ref.watch(activeRouteProvider);
     final guidance = active?.navigation.guidance;
     final hasGuidance = guidance?.status == RouteGuidanceStatus.available;
@@ -607,7 +611,10 @@ class _HomePageState extends ConsumerState<HomePage>
                                     onShowGuidance: hasGuidance
                                         ? _showGuidanceSteps
                                         : null,
-                                    onReroute: nav.fix == null || nav.isPreview
+                                    onReroute:
+                                        nav.fix == null ||
+                                            nav.isPreview ||
+                                            searchCoolingDown
                                         ? null
                                         : _reroute,
                                   ),
