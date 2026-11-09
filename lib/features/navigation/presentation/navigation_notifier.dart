@@ -111,6 +111,10 @@ class NavigationNotifier extends _$NavigationNotifier {
 
   void start(NavigationRoute route) => _start(route);
 
+  void resumeOnRoute(NavigationRoute route) {
+    _start(route, session: state.session?.resume(_now()));
+  }
+
   void _start(NavigationRoute route, {NavigationSession? session}) {
     if (route.path.length < 2) return;
     _previewTimer?.cancel();
@@ -137,9 +141,7 @@ class NavigationNotifier extends _$NavigationNotifier {
                 _fixExpiryTimer?.cancel();
                 final now = _now();
                 final age = now.difference(value.capturedAt.toUtc());
-                if (age > const Duration(seconds: 20) ||
-                    age < const Duration(seconds: -5) ||
-                    value.accuracyMeters > 50) {
+                if (!isReliableNavigationFix(value, now)) {
                   _outsideFixes = 0;
                   state = GuidanceState(
                     status: GuidanceStatus.weakGps,

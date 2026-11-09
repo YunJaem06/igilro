@@ -51,6 +51,15 @@ final class NavigationStepProgress {
   final int? nextIndex;
 }
 
+bool isReliableNavigationFix(LocationFix fix, DateTime now) {
+  final age = now.difference(fix.capturedAt);
+  return age <= const Duration(seconds: 20) &&
+      age >= const Duration(seconds: -5) &&
+      fix.accuracyMeters.isFinite &&
+      fix.accuracyMeters >= 0 &&
+      fix.accuracyMeters <= 50;
+}
+
 NavigationStepProgress? measureGuidanceSteps(
   NavigationRoute route,
   NavigationProgress progress, {

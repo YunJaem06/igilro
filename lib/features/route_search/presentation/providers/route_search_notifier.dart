@@ -31,6 +31,9 @@ class RouteSearchNotifier extends _$RouteSearchNotifier {
     return null;
   }
 
+  void applyRerouteResult(RouteSearchResult result) =>
+      state = AsyncData(result);
+
   Future<void> search({DateTime? departureAt}) async {
     if (state.isLoading ||
         ref.read(routeSearchKindProvider) != RouteSearchKind.general) {

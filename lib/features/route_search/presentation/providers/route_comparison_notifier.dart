@@ -34,6 +34,8 @@ class RouteComparisonNotifier extends _$RouteComparisonNotifier {
     return null;
   }
 
+  void applyRerouteResult(RouteComparison result) => state = AsyncData(result);
+
   Future<void> search() async {
     if (state.isLoading ||
         ref.read(routeSearchKindProvider) != RouteSearchKind.prediction) {

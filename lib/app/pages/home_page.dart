@@ -31,6 +31,8 @@ import '../../features/route_search/presentation/widgets/route_explorer_panel.da
 import '../debug/prediction_pilot_button.dart';
 import '../guidance/active_route_provider.dart';
 import '../guidance/guidance_map_points.dart';
+import '../guidance/navigation_reroute_notifier.dart';
+import '../guidance/navigation_reroute_panel.dart';
 import '../widgets/route_input_bar.dart';
 import '../widgets/prediction_coverage_control.dart';
 import '../widgets/map_search_sheet.dart';
@@ -63,6 +65,7 @@ class _HomePageState extends ConsumerState<HomePage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
+      ref.read(navigationRerouteProvider.notifier).cancel();
       ref.read(navigationProvider.notifier).pause();
       ref.read(mapProvider.notifier).stopFollowing();
     }
@@ -171,6 +174,11 @@ class _HomePageState extends ConsumerState<HomePage>
     }
   }
 
+  void _reroute() {
+    _clearInspection();
+    ref.read(navigationRerouteProvider.notifier).reroute();
+  }
+
   void _follow() {
     _clearInspection();
     ref.read(mapProvider.notifier).beginFollowing();
@@ -276,6 +284,7 @@ class _HomePageState extends ConsumerState<HomePage>
     final single = ref.watch(routePredictionProvider).asData?.value;
     final general = ref.watch(routeSearchProvider).asData?.value;
     final nav = ref.watch(navigationProvider);
+    final reroute = ref.watch(navigationRerouteProvider);
     final active = ref.watch(activeRouteProvider);
     final guidance = active?.navigation.guidance;
     final hasGuidance = guidance?.status == RouteGuidanceStatus.available;
@@ -340,13 +349,10 @@ class _HomePageState extends ConsumerState<HomePage>
     final mapReady =
         ref.watch(mapConfiguredProvider) &&
         mapState.status == MapLoadStatus.ready;
-    ref.listen(routeSelectionProvider.select((value) => value.endpoints), (
-      _,
-      next,
-    ) {
-      ref.read(navigationProvider.notifier).stop();
-      _frame();
-    });
+    ref.listen(
+      routeSelectionProvider.select((value) => value.endpoints),
+      (_, _) => _frame(),
+    );
     if (showPredictionCoverage) {
       ref.listen(predictionCoverageProvider, (previous, next) {
         final value = next.asData?.value;
@@ -362,10 +368,7 @@ class _HomePageState extends ConsumerState<HomePage>
         }
       });
     }
-    ref.listen(routeSearchKindProvider, (_, next) {
-      ref.read(navigationProvider.notifier).stop();
-      _frame();
-    });
+    ref.listen(routeSearchKindProvider, (_, _) => _frame());
     ref.listen(routeSearchProvider, (_, next) {
       if (next.asData?.value != null) _frame();
     });
@@ -375,10 +378,7 @@ class _HomePageState extends ConsumerState<HomePage>
     ref.listen(routeComparisonProvider, (_, next) {
       if (next.asData?.value != null) _frame();
     });
-    ref.listen(routePredictionOptionsProvider, (_, next) {
-      ref.read(navigationProvider.notifier).stop();
-      _frame();
-    });
+    ref.listen(routePredictionOptionsProvider, (_, _) => _frame());
     ref.listen(navigationProvider, (previous, next) {
       if (next.status == GuidanceStatus.arrived &&
           previous?.status != GuidanceStatus.arrived) {
@@ -600,34 +600,17 @@ class _HomePageState extends ConsumerState<HomePage>
                     padding: EdgeInsets.zero,
                     child: nav.active
                         ? SingleChildScrollView(
-                            child: GuidancePanel(
-                              onFollow: _follow,
-                              onShowGuidance: hasGuidance
-                                  ? _showGuidanceSteps
-                                  : null,
-                              onReroute: nav.fix == null || nav.isPreview
-                                  ? null
-                                  : () {
-                                      final coordinate = nav.fix!.coordinate;
-                                      ref
-                                          .read(navigationProvider.notifier)
-                                          .stop();
-                                      ref
-                                          .read(routeSelectionProvider.notifier)
-                                          .useCurrentLocation(coordinate);
-                                      if (kind == RouteSearchKind.prediction) {
-                                        ref
-                                            .read(
-                                              routeComparisonProvider.notifier,
-                                            )
-                                            .search();
-                                      } else {
-                                        ref
-                                            .read(routeSearchProvider.notifier)
-                                            .search();
-                                      }
-                                    },
-                            ),
+                            child: reroute.isLoading || reroute.hasError
+                                ? NavigationReroutePanel(error: reroute.error)
+                                : GuidancePanel(
+                                    onFollow: _follow,
+                                    onShowGuidance: hasGuidance
+                                        ? _showGuidanceSteps
+                                        : null,
+                                    onReroute: nav.fix == null || nav.isPreview
+                                        ? null
+                                        : _reroute,
+                                  ),
                           )
                         : selection.selecting != null
                         ? SingleChildScrollView(
