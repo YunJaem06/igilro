@@ -35,7 +35,11 @@ Future<void> main(List<String> args) async {
       );
     }
     final coverage = (coverageResult as Success<PredictionCoverage>).value;
-    for (final mode in RoutePredictionMode.values) {
+    for (final mode in [
+      RoutePredictionMode.fastest,
+      RoutePredictionMode.shade,
+      if (args.contains('--include-sunlight')) RoutePredictionMode.sunlight,
+    ]) {
       final query = RoutePredictionQuery(
         origin: const GeoCoordinate(longitude: 127.0374, latitude: 37.5445),
         destination: const GeoCoordinate(
@@ -55,20 +59,35 @@ Future<void> main(List<String> args) async {
     }
     final fastest = results[0];
     final shade = results[1];
-    _check(fastest.evaluatedAt == shade.evaluatedAt, 'evaluation time');
-    _check(fastest.dataVersion == shade.dataVersion, 'walking graph version');
     _check(
-      fastest.predictionDataVersion == shade.predictionDataVersion,
-      'prediction scene version',
+      coverage.dataVersion == fastest.dataVersion,
+      'coverage graph version',
     );
-    _check(fastest.snapping == shade.snapping, 'snapping');
-    _check(coverage.dataVersion == shade.dataVersion, 'coverage graph version');
     _check(
-      coverage.predictionDataVersion == shade.predictionDataVersion,
+      coverage.predictionDataVersion == fastest.predictionDataVersion,
       'coverage scene version',
     );
     for (final result in results) {
       final route = result.routes.single;
+      _check(fastest.evaluatedAt == result.evaluatedAt, 'evaluation time');
+      _check(
+        fastest.dataVersion == result.dataVersion,
+        'walking graph version',
+      );
+      _check(
+        fastest.predictionDataVersion == result.predictionDataVersion,
+        'prediction scene version',
+      );
+      _check(fastest.snapping == result.snapping, 'snapping');
+      _check(
+        fastest.baselineDuration == result.baselineDuration,
+        'baseline duration',
+      );
+      _check(
+        route.duration.inSeconds <=
+            (fastest.baselineDuration.inSeconds * 1.3).ceil(),
+        'walking time budget',
+      );
       _check(route.shadeSegments.isNotEmpty, 'server shade segments');
       _check(
         route.guidance?.status == RouteGuidanceStatus.available &&
@@ -82,10 +101,6 @@ Future<void> main(List<String> args) async {
         'segment coverage',
       );
     }
-    _check(
-      fastest.baselineDuration == shade.baselineDuration,
-      'baseline duration',
-    );
     if (args.contains('--check-snapshot')) {
       final a = fastest.routes.single;
       final b = shade.routes.single;

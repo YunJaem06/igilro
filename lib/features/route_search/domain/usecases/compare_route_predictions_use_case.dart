@@ -12,8 +12,12 @@ typedef _ComparisonAttempt = ({
 });
 
 final class CompareRoutePredictionsUseCase {
-  CompareRoutePredictionsUseCase(this._search);
+  CompareRoutePredictionsUseCase(
+    this._search, {
+    this._alternativeMode = RoutePredictionMode.shade,
+  });
   final SearchRoutePredictionUseCase _search;
+  final RoutePredictionMode _alternativeMode;
   static const _cancelled = Result<RouteComparison>.failure(
     Failure(type: FailureType.cancelled),
   );
@@ -60,13 +64,13 @@ final class CompareRoutePredictionsUseCase {
       }
       fastest = (result as Success<ModelRoutePrediction>).value;
     }
-    final shade = await _search(
+    final alternative = await _search(
       attempt.endpoints,
-      mode: RoutePredictionMode.shade,
+      mode: _alternativeMode,
       departureAt: attempt.departureAt,
     );
     if (generation != _generation) return _cancelled;
-    if (shade case Failed<ModelRoutePrediction>(:final failure)) {
+    if (alternative case Failed<ModelRoutePrediction>(:final failure)) {
       if (failure.isThrottled) {
         _retry = (
           endpoints: attempt.endpoints,
@@ -77,7 +81,7 @@ final class CompareRoutePredictionsUseCase {
       return Result.failure(failure);
     }
     final a = fastest;
-    final b = (shade as Success<ModelRoutePrediction>).value;
+    final b = (alternative as Success<ModelRoutePrediction>).value;
     if (a.evaluatedAt != b.evaluatedAt ||
         a.dataVersion != b.dataVersion ||
         a.predictionDataVersion != b.predictionDataVersion ||
@@ -94,6 +98,6 @@ final class CompareRoutePredictionsUseCase {
         Failure(type: FailureType.invalidData, code: 'COMPARISON_CHANGED'),
       );
     }
-    return Result.success(RouteComparison(fastest: a, shade: b));
+    return Result.success(RouteComparison(fastest: a, alternative: b));
   }
 }

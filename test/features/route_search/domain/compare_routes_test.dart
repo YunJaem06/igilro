@@ -44,10 +44,10 @@ void main() {
       // The routing algorithm version is mode-specific, unlike the graph and scene.
       expect(
         pair.fastest.routingModelVersion,
-        isNot(pair.shade.routingModelVersion),
+        isNot(pair.alternative.routingModelVersion),
       );
       expect(pair.fastest.routes.first.path.length, 14);
-      expect(pair.shade.routes.first.path.length, 3);
+      expect(pair.alternative.routes.first.path.length, 3);
     },
   );
   test('a snapshot change rejects the comparison', () async {

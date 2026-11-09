@@ -108,10 +108,10 @@ void main() {
     expect(requests.last, requests[1]);
     final pair = container.read(routeComparisonProvider).requireValue!;
     expect(pair.fastest.evaluatedAt, predictionDeparture);
-    expect(pair.shade.evaluatedAt, predictionDeparture);
+    expect(pair.alternative.evaluatedAt, predictionDeparture);
     expect(
       pair.fastest.predictionDataVersion,
-      pair.shade.predictionDataVersion,
+      pair.alternative.predictionDataVersion,
     );
   }, skip: _rateUrl.isEmpty);
 

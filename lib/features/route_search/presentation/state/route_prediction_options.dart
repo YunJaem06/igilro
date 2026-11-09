@@ -8,6 +8,7 @@ part 'route_prediction_options.freezed.dart';
 abstract class RoutePredictionOptions with _$RoutePredictionOptions {
   const factory RoutePredictionOptions({
     @Default(RoutePredictionMode.shade) RoutePredictionMode mode,
+    @Default(RoutePredictionMode.shade) RoutePredictionMode comparisonMode,
     DateTime? departureAt,
   }) = _RoutePredictionOptions;
 }

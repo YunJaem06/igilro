@@ -40,6 +40,8 @@ class RouteExplorerPanel extends ConsumerWidget {
     final general = generalState.asData?.value;
     final route = model?.routes.first;
     final isPrediction = kind == RouteSearchKind.prediction;
+    final showSunlight = options.comparisonMode == RoutePredictionMode.sunlight;
+    final comparisonLabel = showSunlight ? '햇빛길' : '그늘길';
     final loading = isPrediction
         ? comparisonState.isLoading || predictionState.isLoading
         : generalState.isLoading;
@@ -79,22 +81,39 @@ class RouteExplorerPanel extends ConsumerWidget {
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  for (final value in RouteSearchKind.values)
+                  ChoiceChip(
+                    showCheckmark: false,
+                    label: const Text('도보'),
+                    avatar: const Icon(Icons.directions_walk, size: 18),
+                    selected: !isPrediction,
+                    onSelected: (_) => ref
+                        .read(routeSearchKindProvider.notifier)
+                        .select(RouteSearchKind.general),
+                  ),
+                  for (final mode in [
+                    RoutePredictionMode.shade,
+                    RoutePredictionMode.sunlight,
+                  ])
                     ChoiceChip(
                       showCheckmark: false,
                       label: Text(
-                        value == RouteSearchKind.general ? '도보' : '그늘길',
+                        mode == RoutePredictionMode.shade ? '그늘길' : '햇빛 받으며',
                       ),
                       avatar: Icon(
-                        value == RouteSearchKind.general
-                            ? Icons.directions_walk
-                            : Icons.wb_shade,
+                        mode == RoutePredictionMode.shade
+                            ? Icons.wb_shade
+                            : Icons.wb_sunny_outlined,
                         size: 18,
                       ),
-                      selected: kind == value,
-                      onSelected: (_) => ref
-                          .read(routeSearchKindProvider.notifier)
-                          .select(value),
+                      selected: isPrediction && options.comparisonMode == mode,
+                      onSelected: (_) {
+                        ref
+                            .read(routePredictionOptionsProvider.notifier)
+                            .selectComparisonMode(mode);
+                        ref
+                            .read(routeSearchKindProvider.notifier)
+                            .select(RouteSearchKind.prediction);
+                      },
                     ),
                 ],
               ),
@@ -132,9 +151,9 @@ class RouteExplorerPanel extends ConsumerWidget {
             ),
           ),
         if (hasFastestToCompare)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Text('빠른 길을 받았어요. 같은 조건으로 그늘길을 이어서 비교할 수 있어요.'),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text('빠른 길을 받았어요. 같은 조건으로 $comparisonLabel을 이어서 비교할 수 있어요.'),
           ),
         if (error case Failure(code: 'OUTSIDE_SUPPORTED_AREA'))
           TextButton.icon(
@@ -153,6 +172,7 @@ class RouteExplorerPanel extends ConsumerWidget {
                     pair.fastest,
                     options.mode,
                     comparison: true,
+                    showSunlight: showSunlight,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -160,15 +180,22 @@ class RouteExplorerPanel extends ConsumerWidget {
                   child: _choice(
                     context,
                     ref,
-                    pair.shade,
+                    pair.alternative,
                     options.mode,
                     comparison: true,
+                    showSunlight: showSunlight,
                   ),
                 ),
               ],
             )
           else
-            _choice(context, ref, model, route!.mode),
+            _choice(
+              context,
+              ref,
+              model,
+              route!.mode,
+              showSunlight: showSunlight,
+            ),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -212,7 +239,7 @@ class RouteExplorerPanel extends ConsumerWidget {
             child: Text(
               canSearch
                   ? isPrediction
-                        ? '빠른 길과 그늘길을 함께 비교해 보세요.'
+                        ? '빠른 길과 $comparisonLabel을 함께 비교해 보세요.'
                         : '선택한 두 지점을 걸어서 연결해요.'
                   : samePoint
                   ? '출발지와 도착지를 서로 다른 위치로 선택해 주세요.'
@@ -263,11 +290,11 @@ class RouteExplorerPanel extends ConsumerWidget {
               retrySeconds > 0
                   ? '$retrySeconds초 후 다시 검색'
                   : hasFastestToCompare
-                  ? '그늘길 다시 비교'
+                  ? '$comparisonLabel 다시 비교'
                   : error != null
                   ? '다시 검색'
                   : isPrediction
-                  ? '그늘길 비교'
+                  ? '$comparisonLabel 비교'
                   : '경로 검색',
             ),
           );
@@ -305,10 +332,13 @@ class RouteExplorerPanel extends ConsumerWidget {
     WidgetRef ref,
     ModelRoutePrediction model,
     RoutePredictionMode selected, {
+    required bool showSunlight,
     bool comparison = false,
   }) {
     final route = model.routes.first;
     final active = route.mode == selected;
+    final shadeRatio = route.prediction.modeledShadeRatio;
+    final ratio = showSunlight ? 1 - shadeRatio : shadeRatio;
     final color = Theme.of(context).colorScheme;
     return Material(
       color: active ? color.primaryContainer : color.surfaceContainerLow,
@@ -329,10 +359,11 @@ class RouteExplorerPanel extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                route.mode == RoutePredictionMode.shade ? '그늘 많은 길' : '빠른 길',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
+              Text(switch (route.mode) {
+                RoutePredictionMode.fastest => '빠른 길',
+                RoutePredictionMode.shade => '그늘 많은 길',
+                RoutePredictionMode.sunlight => '햇빛 많은 길',
+              }, style: Theme.of(context).textTheme.labelLarge),
               const SizedBox(height: 4),
               Text(
                 '${_duration(route.duration)} · ${_distance(route.distanceMeters)}',
@@ -340,12 +371,17 @@ class RouteExplorerPanel extends ConsumerWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '예측 그늘 ${(route.prediction.modeledShadeRatio * 100).toStringAsFixed(1)}%',
+                '예측 ${showSunlight ? '햇빛' : '그늘'} ${(ratio * 100).toStringAsFixed(1)}%',
                 style: TextStyle(
                   color: color.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (route.mode == RoutePredictionMode.sunlight)
+                Text(
+                  '빠른 길 대비 +${route.additionalDuration.inSeconds}초',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
             ],
           ),
         ),

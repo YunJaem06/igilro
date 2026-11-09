@@ -356,12 +356,25 @@ void main() {
       tester,
     ) async {
       await mount(tester);
-      await tap(tester, find.text('그늘길'));
+      final isSunlight = mode == RoutePredictionMode.sunlight;
+      await tap(tester, find.text(isSunlight ? '햇빛 받으며' : '그늘길'));
       final options = container.read(routePredictionOptionsProvider.notifier);
       options.setDepartureAt(predictionDeparture);
       options.selectMode(mode);
       await tester.pumpAndSettle();
-      await tap(tester, find.text('그늘길 비교'));
+      await tap(tester, find.text(isSunlight ? '햇빛길 비교' : '그늘길 비교'));
+      final comparisonMode = isSunlight
+          ? RoutePredictionMode.sunlight
+          : RoutePredictionMode.shade;
+      expect(predictions.queries.map((query) => query.mode), [
+        RoutePredictionMode.fastest,
+        comparisonMode,
+      ]);
+      if (isSunlight) {
+        expect(find.text('햇빛 많은 길'), findsOneWidget);
+        expect(find.textContaining(RegExp(r'^예측 햇빛 \d')), findsNWidgets(2));
+        expect(find.text('빠른 길 대비 +47초'), findsOneWidget);
+      }
       await leaveRoute(tester);
       final endpoints = container.read(routeSelectionProvider).endpoints;
       final oldPath = canvas(tester).routePath;
@@ -390,7 +403,7 @@ void main() {
               candidate.copyWith(
                 path: [
                   query.origin,
-                  if (query.mode == RoutePredictionMode.shade) offRoute,
+                  if (query.mode == comparisonMode) offRoute,
                   query.destination,
                 ],
                 guidance: null,
@@ -403,6 +416,7 @@ void main() {
       await tap(tester, find.text('다시 시도'));
 
       expect(predictions.queries, hasLength(5));
+      expect(predictions.queries.last.mode, comparisonMode);
       for (final query in predictions.queries.skip(3)) {
         expect(query.origin, retryPosition);
         expect(query.destination, endpoints.destination!.coordinate);
@@ -413,12 +427,17 @@ void main() {
       expect(current.status, GuidanceStatus.following);
       expect(current.route!.path, [
         retryPosition,
-        if (mode == RoutePredictionMode.shade) offRoute,
+        if (mode == comparisonMode) offRoute,
         forestDestination,
       ]);
       expect(canvas(tester).routePath, current.route!.path);
       expect(find.byType(GuidanceTimeCard), findsOneWidget);
       await tap(tester, find.text('안내 종료'));
+      if (isSunlight) {
+        await tap(tester, find.text('그늘길'));
+        expect(canvas(tester).routePath, isEmpty);
+        expect(find.text('그늘길 비교'), findsOneWidget);
+      }
     });
   }
 

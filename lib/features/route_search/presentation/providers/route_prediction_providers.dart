@@ -23,11 +23,22 @@ class RoutePredictionOptionsNotifier extends _$RoutePredictionOptionsNotifier {
   @override
   RoutePredictionOptions build() => const RoutePredictionOptions();
 
-  void selectMode(RoutePredictionMode mode, {DateTime? evaluatedAt}) =>
-      state = state.copyWith(
-        mode: mode,
-        departureAt: state.departureAt ?? evaluatedAt?.toUtc(),
-      );
+  void selectComparisonMode(RoutePredictionMode mode) {
+    if (mode == RoutePredictionMode.fastest || mode == state.comparisonMode) {
+      return;
+    }
+    state = state.copyWith(mode: mode, comparisonMode: mode);
+  }
+
+  void selectMode(RoutePredictionMode mode, {DateTime? evaluatedAt}) {
+    if (mode != RoutePredictionMode.fastest && mode != state.comparisonMode) {
+      return;
+    }
+    state = state.copyWith(
+      mode: mode,
+      departureAt: state.departureAt ?? evaluatedAt?.toUtc(),
+    );
+  }
 
   void setDepartureAt(DateTime? value) =>
       state = state.copyWith(departureAt: value?.toUtc());

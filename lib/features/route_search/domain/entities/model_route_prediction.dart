@@ -5,7 +5,7 @@ import 'route_guidance.dart';
 
 part 'model_route_prediction.freezed.dart';
 
-enum RoutePredictionMode { fastest, shade }
+enum RoutePredictionMode { fastest, shade, sunlight }
 
 enum PredictedShadeState { shade, sunlight }
 

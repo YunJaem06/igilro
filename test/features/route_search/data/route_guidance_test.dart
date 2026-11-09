@@ -85,7 +85,7 @@ void main() {
     },
   );
 
-  for (final mode in RoutePredictionMode.values) {
+  for (final mode in [RoutePredictionMode.fastest, RoutePredictionMode.shade]) {
     test(
       'captured ${mode.name} prediction keeps its own guidance and shade segments',
       () {

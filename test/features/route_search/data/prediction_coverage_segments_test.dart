@@ -117,7 +117,10 @@ void main() {
   });
 
   test('captured Seoul Forest responses retain complete shade bends, cumulative distances, and snapping', () {
-    for (final mode in RoutePredictionMode.values) {
+    for (final mode in [
+      RoutePredictionMode.fastest,
+      RoutePredictionMode.shade,
+    ]) {
       final query = predictionQuery(mode)
           .copyWith(origin: forestOrigin, destination: forestDestination);
       final value = predictionFor(query);

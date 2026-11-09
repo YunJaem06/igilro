@@ -144,7 +144,7 @@ final class RoutePredictionOptionsNotifierProvider
 }
 
 String _$routePredictionOptionsNotifierHash() =>
-    r'3b82d7ba820cb406b179f79672d6c55cf243945e';
+    r'f3d7a16ac399aa8caeecd4ff6e9ac5006c596b05';
 
 abstract class _$RoutePredictionOptionsNotifier
     extends $Notifier<RoutePredictionOptions> {

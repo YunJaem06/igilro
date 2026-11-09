@@ -54,6 +54,7 @@ class PredictionPilotButton extends ConsumerWidget {
           ),
         );
     final options = ref.read(routePredictionOptionsProvider.notifier);
+    options.selectComparisonMode(RoutePredictionMode.shade);
     options.selectMode(RoutePredictionMode.shade);
     options.setDepartureAt(DateTime.utc(2026, 10, 28, 2));
     unawaited(ref.read(routeComparisonProvider.notifier).search());

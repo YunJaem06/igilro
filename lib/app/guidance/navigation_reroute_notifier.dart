@@ -133,6 +133,7 @@ class NavigationRerouteNotifier extends _$NavigationRerouteNotifier {
       } else {
         final compare = CompareRoutePredictionsUseCase(
           ref.read(searchRoutePredictionUseCaseProvider),
+          alternativeMode: options.comparisonMode,
         );
         _cancelPending = compare.cancel;
         await _finish(

@@ -15,6 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RoutePredictionOptions {
   RoutePredictionMode get mode;
+  RoutePredictionMode get comparisonMode;
   DateTime? get departureAt;
 
   /// Create a copy of RoutePredictionOptions
@@ -34,6 +35,8 @@ mixin _$RoutePredictionOptions {
         (other.runtimeType == runtimeType &&
             other is RoutePredictionOptions &&
             (identical(other.mode, _this.mode) || other.mode == _this.mode) &&
+            (identical(other.comparisonMode, _this.comparisonMode) ||
+                other.comparisonMode == _this.comparisonMode) &&
             (identical(other.departureAt, _this.departureAt) ||
                 other.departureAt == _this.departureAt));
   }
@@ -41,13 +44,18 @@ mixin _$RoutePredictionOptions {
   @override
   int get hashCode {
     final _this = this as RoutePredictionOptions;
-    return Object.hash(runtimeType, _this.mode, _this.departureAt);
+    return Object.hash(
+      runtimeType,
+      _this.mode,
+      _this.comparisonMode,
+      _this.departureAt,
+    );
   }
 
   @override
   String toString() {
     final _this = this as RoutePredictionOptions;
-    return 'RoutePredictionOptions(mode: ${_this.mode}, departureAt: ${_this.departureAt})';
+    return 'RoutePredictionOptions(mode: ${_this.mode}, comparisonMode: ${_this.comparisonMode}, departureAt: ${_this.departureAt})';
   }
 }
 
@@ -58,7 +66,11 @@ abstract mixin class $RoutePredictionOptionsCopyWith<$Res> {
     $Res Function(RoutePredictionOptions) _then,
   ) = _$RoutePredictionOptionsCopyWithImpl;
   @useResult
-  $Res call({RoutePredictionMode mode, DateTime? departureAt});
+  $Res call({
+    RoutePredictionMode mode,
+    RoutePredictionMode comparisonMode,
+    DateTime? departureAt,
+  });
 }
 
 /// @nodoc
@@ -73,12 +85,20 @@ class _$RoutePredictionOptionsCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? mode = null, Object? departureAt = freezed}) {
+  $Res call({
+    Object? mode = null,
+    Object? comparisonMode = null,
+    Object? departureAt = freezed,
+  }) {
     return _then(
       RoutePredictionOptions(
         mode: null == mode
             ? _self.mode
             : mode // ignore: cast_nullable_to_non_nullable
+                  as RoutePredictionMode,
+        comparisonMode: null == comparisonMode
+            ? _self.comparisonMode
+            : comparisonMode // ignore: cast_nullable_to_non_nullable
                   as RoutePredictionMode,
         departureAt: freezed == departureAt
             ? _self.departureAt
@@ -182,14 +202,18 @@ extension RoutePredictionOptionsPatterns on RoutePredictionOptions {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(RoutePredictionMode mode, DateTime? departureAt)?
+    TResult Function(
+      RoutePredictionMode mode,
+      RoutePredictionMode comparisonMode,
+      DateTime? departureAt,
+    )?
     $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
       case _RoutePredictionOptions() when $default != null:
-        return $default(_that.mode, _that.departureAt);
+        return $default(_that.mode, _that.comparisonMode, _that.departureAt);
       case _:
         return orElse();
     }
@@ -210,12 +234,17 @@ extension RoutePredictionOptionsPatterns on RoutePredictionOptions {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(RoutePredictionMode mode, DateTime? departureAt) $default,
+    TResult Function(
+      RoutePredictionMode mode,
+      RoutePredictionMode comparisonMode,
+      DateTime? departureAt,
+    )
+    $default,
   ) {
     final _that = this;
     switch (_that) {
       case _RoutePredictionOptions():
-        return $default(_that.mode, _that.departureAt);
+        return $default(_that.mode, _that.comparisonMode, _that.departureAt);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -235,13 +264,17 @@ extension RoutePredictionOptionsPatterns on RoutePredictionOptions {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(RoutePredictionMode mode, DateTime? departureAt)?
+    TResult? Function(
+      RoutePredictionMode mode,
+      RoutePredictionMode comparisonMode,
+      DateTime? departureAt,
+    )?
     $default,
   ) {
     final _that = this;
     switch (_that) {
       case _RoutePredictionOptions() when $default != null:
-        return $default(_that.mode, _that.departureAt);
+        return $default(_that.mode, _that.comparisonMode, _that.departureAt);
       case _:
         return null;
     }
@@ -253,12 +286,16 @@ extension RoutePredictionOptionsPatterns on RoutePredictionOptions {
 class _RoutePredictionOptions implements RoutePredictionOptions {
   const _RoutePredictionOptions({
     this.mode = RoutePredictionMode.shade,
+    this.comparisonMode = RoutePredictionMode.shade,
     this.departureAt,
   });
 
   @override
   @JsonKey()
   final RoutePredictionMode mode;
+  @override
+  @JsonKey()
+  final RoutePredictionMode comparisonMode;
   @override
   final DateTime? departureAt;
 
@@ -279,18 +316,20 @@ class _RoutePredictionOptions implements RoutePredictionOptions {
         (other.runtimeType == runtimeType &&
             other is _RoutePredictionOptions &&
             (identical(other.mode, mode) || other.mode == mode) &&
+            (identical(other.comparisonMode, comparisonMode) ||
+                other.comparisonMode == comparisonMode) &&
             (identical(other.departureAt, departureAt) ||
                 other.departureAt == departureAt));
   }
 
   @override
   int get hashCode {
-    return Object.hash(runtimeType, mode, departureAt);
+    return Object.hash(runtimeType, mode, comparisonMode, departureAt);
   }
 
   @override
   String toString() {
-    return 'RoutePredictionOptions(mode: $mode, departureAt: $departureAt)';
+    return 'RoutePredictionOptions(mode: $mode, comparisonMode: $comparisonMode, departureAt: $departureAt)';
   }
 }
 
@@ -303,7 +342,11 @@ abstract mixin class _$RoutePredictionOptionsCopyWith<$Res>
   ) = __$RoutePredictionOptionsCopyWithImpl;
   @override
   @useResult
-  $Res call({RoutePredictionMode mode, DateTime? departureAt});
+  $Res call({
+    RoutePredictionMode mode,
+    RoutePredictionMode comparisonMode,
+    DateTime? departureAt,
+  });
 }
 
 /// @nodoc
@@ -318,12 +361,20 @@ class __$RoutePredictionOptionsCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $Res call({Object? mode = null, Object? departureAt = freezed}) {
+  $Res call({
+    Object? mode = null,
+    Object? comparisonMode = null,
+    Object? departureAt = freezed,
+  }) {
     return _then(
       _RoutePredictionOptions(
         mode: null == mode
             ? _self.mode
             : mode // ignore: cast_nullable_to_non_nullable
+                  as RoutePredictionMode,
+        comparisonMode: null == comparisonMode
+            ? _self.comparisonMode
+            : comparisonMode // ignore: cast_nullable_to_non_nullable
                   as RoutePredictionMode,
         departureAt: freezed == departureAt
             ? _self.departureAt

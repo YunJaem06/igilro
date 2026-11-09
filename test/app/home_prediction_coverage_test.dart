@@ -103,7 +103,10 @@ void main() {
       expect(repository.queries.map((q) => q.departureAt).toSet(), {
         predictionDeparture,
       });
-      expect(repository.queries.map((q) => q.mode), RoutePredictionMode.values);
+      expect(repository.queries.map((q) => q.mode), [
+        RoutePredictionMode.fastest,
+        RoutePredictionMode.shade,
+      ]);
       expect(find.text('예측 그늘 54.6%'), findsOneWidget);
       expect(find.text('예측 그늘 31.1%'), findsOneWidget);
       final route = predictionFor(repository.queries.last).routes.single;

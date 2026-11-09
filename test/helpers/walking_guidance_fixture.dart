@@ -27,8 +27,14 @@ RouteSearchResult walkingGuidanceResult() {
   );
 }
 
-ModelRoutePrediction walkingPrediction(RoutePredictionQuery query) =>
-    const ModelRoutePredictionMapper().toResult(
-      ModelRoutePredictionResponseDto.fromJson(_body(query.mode.name)),
-      query,
-    );
+ModelRoutePrediction walkingPrediction(RoutePredictionQuery query) {
+  final fixtureMode = query.mode == RoutePredictionMode.sunlight
+      ? RoutePredictionMode.shade
+      : query.mode;
+  final body = _body(fixtureMode.name);
+  body['routes'][0]['mode'] = query.mode.name;
+  return const ModelRoutePredictionMapper().toResult(
+    ModelRoutePredictionResponseDto.fromJson(body),
+    query,
+  );
+}

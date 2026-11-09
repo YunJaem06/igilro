@@ -26,7 +26,9 @@ class RouteComparisonNotifier extends _$RouteComparisonNotifier {
   FutureOr<RouteComparison?> build() {
     ref.watch(routeSelectionProvider.select((value) => value.endpoints));
     ref.watch(
-      routePredictionOptionsProvider.select((value) => value.departureAt),
+      routePredictionOptionsProvider.select(
+        (value) => (value.departureAt, value.comparisonMode),
+      ),
     );
     ref.watch(routeSearchKindProvider);
     _revision++;
@@ -51,11 +53,13 @@ class RouteComparisonNotifier extends _$RouteComparisonNotifier {
         ref.read(routeSearchKindProvider) != RouteSearchKind.prediction) {
       return;
     }
+    final options = ref.read(routePredictionOptionsProvider);
     final revision = ++_revision;
     final useCase =
         _pending ??
         CompareRoutePredictionsUseCase(
           ref.read(searchRoutePredictionUseCaseProvider),
+          alternativeMode: options.comparisonMode,
         );
     _pending = useCase;
     state = const AsyncLoading();
@@ -63,7 +67,7 @@ class RouteComparisonNotifier extends _$RouteComparisonNotifier {
         ? await useCase.retry()
         : await useCase(
             ref.read(routeSelectionProvider).endpoints,
-            departureAt: ref.read(routePredictionOptionsProvider).departureAt,
+            departureAt: options.departureAt,
           );
     if (!ref.mounted || revision != _revision) return;
     if (!useCase.canRetry) _pending = null;

@@ -59,21 +59,49 @@ void main() {
       final pair = comparison.requireValue!;
       expect(pair.fastest.dataVersion, coverage.requireValue.dataVersion);
       expect(
-        pair.shade.predictionDataVersion,
+        pair.alternative.predictionDataVersion,
         coverage.requireValue.predictionDataVersion,
       );
       for (final mode in [
         RoutePredictionMode.shade,
         RoutePredictionMode.fastest,
+        if (const bool.fromEnvironment('IGILRO_TEST_SUNLIGHT'))
+          RoutePredictionMode.sunlight,
       ]) {
-        final prediction = pair.forMode(mode);
+        var selectedPair = pair;
+        if (mode == RoutePredictionMode.sunlight) {
+          await _tap(tester, find.text('햇빛 받으며'));
+          await _tap(tester, find.text('햇빛길 비교'));
+          await _waitUntil(
+            tester,
+            () => !container.read(routeComparisonProvider).isLoading,
+          );
+          final comparison = container.read(routeComparisonProvider);
+          expect(comparison.hasError, false, reason: '${comparison.error}');
+          selectedPair = comparison.requireValue!;
+          expect(
+            selectedPair.alternative.query.mode,
+            RoutePredictionMode.sunlight,
+          );
+          expect(
+            selectedPair.alternative.evaluatedAt,
+            selectedPair.fastest.evaluatedAt,
+          );
+          expect(find.textContaining(RegExp(r'^예측 햇빛 \d')), findsNWidgets(2));
+          expect(find.textContaining('빠른 길 대비 +'), findsOneWidget);
+        }
+        final prediction = selectedPair.forMode(mode);
         final route = prediction.routes.single;
         expect(route.shadeSegments, isNotEmpty);
         expect(route.guidance?.status, RouteGuidanceStatus.available);
         expect(route.guidance!.steps.length, greaterThanOrEqualTo(2));
         await _tap(
           tester,
-          find.text(mode == RoutePredictionMode.shade ? '그늘 많은 길' : '빠른 길'),
+          find.text(switch (mode) {
+            RoutePredictionMode.fastest => '빠른 길',
+            RoutePredictionMode.shade => '그늘 많은 길',
+            RoutePredictionMode.sunlight => '햇빛 많은 길',
+          }),
         );
         expect(container.read(routePredictionOptionsProvider).mode, mode);
         await _tap(tester, find.text('전체 길안내'));

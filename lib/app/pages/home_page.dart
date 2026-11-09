@@ -142,12 +142,7 @@ class _HomePageState extends ConsumerState<HomePage>
       if (ref.read(routeSearchKindProvider) == RouteSearchKind.prediction &&
           pair != null)
         ...pair
-            .forMode(
-              ref.read(routePredictionOptionsProvider).mode ==
-                      RoutePredictionMode.shade
-                  ? RoutePredictionMode.fastest
-                  : RoutePredictionMode.shade,
-            )
+            .otherThan(ref.read(routePredictionOptionsProvider).mode)
             .routes
             .first
             .path,
@@ -312,15 +307,7 @@ class _HomePageState extends ConsumerState<HomePage>
         ? general?.routes.first.path ?? <GeoCoordinate>[]
         : prediction?.routes.first.path ?? <GeoCoordinate>[];
     final alternative = kind == RouteSearchKind.prediction && pair != null
-        ? pair
-              .forMode(
-                options.mode == RoutePredictionMode.shade
-                    ? RoutePredictionMode.fastest
-                    : RoutePredictionMode.shade,
-              )
-              .routes
-              .first
-              .path
+        ? pair.otherThan(options.mode).routes.first.path
         : <GeoCoordinate>[];
     final routeSegments = kind == RouteSearchKind.prediction
         ? prediction?.routes.first.shadeSegments
