@@ -18,13 +18,13 @@ class RouteInputBar extends ConsumerWidget {
       borderRadius: BorderRadius.circular(20),
       elevation: 1,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         child: Row(
           children: [
             const Column(
               children: [
                 Icon(Icons.trip_origin, size: 18, color: Color(0xFF23785C)),
-                SizedBox(height: 18),
+                SizedBox(height: 24),
                 Icon(Icons.place, size: 20, color: Color(0xFF4268C5)),
               ],
             ),
@@ -79,35 +79,39 @@ class RouteInputBar extends ConsumerWidget {
       key: ValueKey('route-${endpoint.name}'),
       borderRadius: BorderRadius.circular(12),
       onTap: () => _pick(context, ref, endpoint),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                text,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: point == null
-                      ? Theme.of(context).colorScheme.onSurfaceVariant
-                      : null,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: point == null
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : null,
+                  ),
                 ),
               ),
-            ),
-            if (point != null)
-              SizedBox(
-                width: 30,
-                height: 24,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  tooltip: '$label 선택 지우기',
-                  icon: const Icon(Icons.close, size: 16),
-                  onPressed: () =>
-                      ref.read(routeSelectionProvider.notifier).clear(endpoint),
+              if (point != null)
+                SizedBox(
+                  width: 40,
+                  height: 40,
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    tooltip: '$label 선택 지우기',
+                    icon: const Icon(Icons.close, size: 16),
+                    onPressed: () => ref
+                        .read(routeSelectionProvider.notifier)
+                        .clear(endpoint),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

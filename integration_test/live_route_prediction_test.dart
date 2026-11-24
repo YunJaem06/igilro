@@ -88,7 +88,7 @@ void main() {
             selectedPair.fastest.evaluatedAt,
           );
           expect(find.textContaining(RegExp(r'^예측 햇빛 \d')), findsNWidgets(2));
-          expect(find.textContaining('빠른 길 대비 +'), findsOneWidget);
+          expect(find.textContaining('빠른 길 대비 +'), findsNothing);
         }
         final prediction = selectedPair.forMode(mode);
         final route = prediction.routes.single;
@@ -104,6 +104,11 @@ void main() {
           }),
         );
         expect(container.read(routePredictionOptionsProvider).mode, mode);
+        await _tap(tester, find.text('상세 보기'));
+        expect(
+          find.text('빠른 길 대비 +${route.additionalDuration.inSeconds}초'),
+          findsOneWidget,
+        );
         await _tap(tester, find.text('전체 길안내'));
         await tester.pump(const Duration(milliseconds: 400));
         final inspectIndex = route.guidance!.steps.length ~/ 2;
@@ -139,6 +144,7 @@ void main() {
           tester.widget<MapCanvas>(find.byType(MapCanvas)).guidancePoints,
           isEmpty,
         );
+        await _tap(tester, find.text('상세 보기'));
         await _tap(tester, find.text('미리보기'));
         final navigation = container.read(navigationProvider);
         expect(navigation.isPreview, true);

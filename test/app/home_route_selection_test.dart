@@ -211,8 +211,18 @@ void main() {
     final path = await searchDetour(tester);
     final completion = Completer<Result<RouteSearchResult>>();
     routeRepository.pending = completion.future;
-    await tester.ensureVisible(find.byTooltip('경로 다시 검색'));
-    await tester.tap(find.byTooltip('경로 다시 검색'));
+    await tap(tester, find.text('상세 보기'));
+    await tester.scrollUntilVisible(
+      find.text('경로 다시 검색'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(BottomSheet),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.tap(find.text('경로 다시 검색'));
     await tester.pump();
     expect(visibleRoutePath, isEmpty);
     completion.complete(

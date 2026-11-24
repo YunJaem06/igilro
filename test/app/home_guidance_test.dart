@@ -130,8 +130,15 @@ void main() {
     return pending;
   }
 
-  Future<void> inspect(WidgetTester tester, int index) async {
+  Future<void> openGuidance(WidgetTester tester) async {
+    if (find.text('전체 길안내').evaluate().isEmpty) {
+      await tap(tester, find.text('상세 보기'));
+    }
     await tap(tester, find.text('전체 길안내'));
+  }
+
+  Future<void> inspect(WidgetTester tester, int index) async {
+    await openGuidance(tester);
     final tile = find.byKey(ValueKey('guidance-step-$index'));
     await tester.scrollUntilVisible(
       tile,
@@ -208,7 +215,7 @@ void main() {
             .any((p) => p.role == MapGuidancePointRole.selected),
         true,
       );
-      await tap(tester, find.text('전체 길안내'));
+      await openGuidance(tester);
       await tester.scrollUntilVisible(
         find.text('다음 안내'),
         100,
@@ -245,7 +252,7 @@ void main() {
     tester,
   ) async {
     await mount(tester);
-    await tap(tester, find.text('전체 길안내'));
+    await openGuidance(tester);
     container
         .read(routeSelectionProvider.notifier)
         .clear(RouteEndpoint.destination);
@@ -280,7 +287,7 @@ void main() {
       await tap(tester, find.text('빠른 길'));
       expect(canvas(tester).guidancePoints, isEmpty);
       expect(find.byType(GuidanceMapInspectionCard), findsNothing);
-      await tap(tester, find.text('전체 길안내'));
+      await openGuidance(tester);
       expect(find.text('전체 길안내 · 19단계'), findsOneWidget);
     },
   );
@@ -373,7 +380,11 @@ void main() {
       if (isSunlight) {
         expect(find.text('햇빛 많은 길'), findsOneWidget);
         expect(find.textContaining(RegExp(r'^예측 햇빛 \d')), findsNWidgets(2));
+        expect(find.text('빠른 길 대비 +47초'), findsNothing);
+        await tap(tester, find.text('상세 보기'));
         expect(find.text('빠른 길 대비 +47초'), findsOneWidget);
+        Navigator.of(tester.element(find.text('경로와 예측 안내'))).pop();
+        await tester.pumpAndSettle();
       }
       await leaveRoute(tester);
       final endpoints = container.read(routeSelectionProvider).endpoints;

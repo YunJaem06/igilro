@@ -173,6 +173,8 @@ void main() {
       first.query.origin,
       first.query.destination,
     ]);
+    expect(find.text('건물 그늘'), findsNothing);
+    await _tap(tester, find.text('상세 보기'));
     expect(find.text('건물 그늘'), findsOneWidget);
     expect(find.textContaining('평가 기준 '), findsOneWidget);
     if (route.shadeEvaluation?.status ==
@@ -180,6 +182,8 @@ void main() {
       expect(find.text('그늘 정보 준비 중'), findsOneWidget);
       expect(find.text('그늘 0%'), findsNothing);
     }
+    Navigator.of(tester.element(find.text('경로 정보'))).pop();
+    await tester.pump(const Duration(milliseconds: 400));
     final mapHeight = tester.getSize(find.byType(MapWidget)).height;
     await tester.tap(find.byTooltip('검색 패널 펼치기'));
     await tester.pump(const Duration(seconds: 1));
@@ -206,6 +210,7 @@ void main() {
 
     // Select an actual server step and verify both the native camera and the
     // rendered guidance layer, while preserving the device location.
+    await _tap(tester, find.text('상세 보기'));
     await _tap(tester, find.text('전체 길안내'));
     await tester.pump(const Duration(milliseconds: 400));
     const selectedIndex = 5;
@@ -235,6 +240,7 @@ void main() {
     debugPrint('IGILRO_GUIDANCE_MAP_INSPECTION');
 
     final mapBeforePreview = nativeMap;
+    await _tap(tester, find.text('상세 보기'));
     await _tap(tester, find.text('미리보기'));
     // Guidance changes the panel key and recreates its native map surface.
     // Observe the ready replacement before using any SDK handle again.
@@ -423,10 +429,20 @@ Future<RouteSearchResult?> _search(
       ? '다시 검색'
       : '경로 검색';
   final hasResult = container.read(routeSearchProvider).asData?.value != null;
-  await _tap(
-    tester,
-    hasResult ? find.byTooltip('경로 다시 검색') : find.text(button),
-  );
+  if (hasResult) {
+    await _tap(tester, find.text('상세 보기'));
+    await tester.scrollUntilVisible(
+      find.text('경로 다시 검색'),
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(BottomSheet),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+  }
+  await _tap(tester, find.text(hasResult ? '경로 다시 검색' : button));
   await _waitUntil(
     tester,
     () => !container.read(routeSearchProvider).isLoading,

@@ -275,7 +275,8 @@ void main() {
   ) async {
     await mount(tester);
     await tap(tester, '그늘길 비교');
-    await tester.tap(find.text('미리보기'));
+    await tap(tester, '상세 보기');
+    await tap(tester, '미리보기');
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
     expect(find.text('경로 미리보기 · 가상 이동'), findsOneWidget);

@@ -15,7 +15,6 @@ import '../providers/route_search_cooldown_notifier.dart';
 import '../providers/route_search_notifier.dart';
 import '../providers/route_selection_notifier.dart';
 import 'route_result_card.dart';
-import 'route_shade_info.dart';
 
 class RouteExplorerPanel extends ConsumerWidget {
   const RouteExplorerPanel({
@@ -63,75 +62,90 @@ class RouteExplorerPanel extends ConsumerWidget {
         ref.read(routeComparisonProvider.notifier).hasFastestToCompare;
     final canSearch = ref.watch(routeSelectionProvider).endpoints.canSearch;
     final samePoint = ref.watch(routeSelectionProvider).endpoints.isSamePoint;
+    void showDetails() {
+      if (isPrediction && model != null) {
+        _modelDetails(context, ref, model);
+      } else if (general != null) {
+        _details(context, ref, '경로 정보', [
+          if (isRunning) ...[
+            Text(
+              listEquals(general.routes.first.path, general.routes.last.path)
+                  ? '이 구간에서는 빠른 길과 러닝길이 같아요.'
+                  : '예상 보행 시간 기준 · 지도에 표시된 횡단만 집계',
+            ),
+            Text(
+              '계단 ${_distance(generalRoute!.metrics.stairsMeters!)} · 횡단 ${generalRoute.metrics.mappedCrossingCount}회',
+            ),
+            Text('빠른 길 대비 +${generalRoute.additionalDuration.inSeconds}초'),
+          ],
+          RouteResultCard(
+            result: general,
+            mode: isRunning ? runningMode : RouteMode.fastest,
+            endpoints: ref.read(routeSelectionProvider).endpoints,
+          ),
+          ..._placeSources(ref),
+        ]);
+      }
+    }
+
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
-            if (hasResult && !loading)
-              IconButton(
-                tooltip: '경로 다시 검색',
-                icon: const Icon(Icons.refresh),
-                onPressed: retrySeconds > 0
-                    ? null
-                    : () {
-                        if (isPrediction) {
-                          ref.read(routeComparisonProvider.notifier).search();
-                        } else {
-                          ref.read(routeSearchProvider.notifier).search();
-                        }
-                      },
-              ),
             Expanded(
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  ChoiceChip(
-                    showCheckmark: false,
-                    label: const Text('도보'),
-                    avatar: const Icon(Icons.directions_walk, size: 18),
-                    selected: kind == RouteSearchKind.general,
-                    onSelected: (_) => ref
-                        .read(routeSearchKindProvider.notifier)
-                        .select(RouteSearchKind.general),
-                  ),
-                  ChoiceChip(
-                    showCheckmark: false,
-                    label: const Text('러닝길'),
-                    avatar: const Icon(Icons.directions_run, size: 18),
-                    selected: isRunning,
-                    onSelected: (_) => ref
-                        .read(routeSearchKindProvider.notifier)
-                        .select(RouteSearchKind.running),
-                  ),
-                  for (final mode in [
-                    RoutePredictionMode.shade,
-                    RoutePredictionMode.sunlight,
-                  ])
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  spacing: 6,
+                  children: [
                     ChoiceChip(
                       showCheckmark: false,
-                      label: Text(
-                        mode == RoutePredictionMode.shade ? '그늘길' : '햇빛 받으며',
-                      ),
-                      avatar: Icon(
-                        mode == RoutePredictionMode.shade
-                            ? Icons.wb_shade
-                            : Icons.wb_sunny_outlined,
-                        size: 18,
-                      ),
-                      selected: isPrediction && options.comparisonMode == mode,
-                      onSelected: (_) {
-                        ref
-                            .read(routePredictionOptionsProvider.notifier)
-                            .selectComparisonMode(mode);
-                        ref
-                            .read(routeSearchKindProvider.notifier)
-                            .select(RouteSearchKind.prediction);
-                      },
+                      label: const Text('도보'),
+                      avatar: const Icon(Icons.directions_walk, size: 18),
+                      selected: kind == RouteSearchKind.general,
+                      onSelected: (_) => ref
+                          .read(routeSearchKindProvider.notifier)
+                          .select(RouteSearchKind.general),
                     ),
-                ],
+                    ChoiceChip(
+                      showCheckmark: false,
+                      label: const Text('러닝길'),
+                      avatar: const Icon(Icons.directions_run, size: 18),
+                      selected: isRunning,
+                      onSelected: (_) => ref
+                          .read(routeSearchKindProvider.notifier)
+                          .select(RouteSearchKind.running),
+                    ),
+                    for (final mode in [
+                      RoutePredictionMode.shade,
+                      RoutePredictionMode.sunlight,
+                    ])
+                      ChoiceChip(
+                        showCheckmark: false,
+                        label: Text(
+                          mode == RoutePredictionMode.shade ? '그늘길' : '햇빛 받으며',
+                        ),
+                        avatar: Icon(
+                          mode == RoutePredictionMode.shade
+                              ? Icons.wb_shade
+                              : Icons.wb_sunny_outlined,
+                          size: 18,
+                        ),
+                        selected:
+                            isPrediction && options.comparisonMode == mode,
+                        onSelected: (_) {
+                          ref
+                              .read(routePredictionOptionsProvider.notifier)
+                              .selectComparisonMode(mode);
+                          ref
+                              .read(routeSearchKindProvider.notifier)
+                              .select(RouteSearchKind.prediction);
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
             if (isPrediction)
@@ -142,7 +156,7 @@ class RouteExplorerPanel extends ConsumerWidget {
               ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 6),
         if (loading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
@@ -213,20 +227,7 @@ class RouteExplorerPanel extends ConsumerWidget {
               showSunlight: showSunlight,
             ),
           const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '예측값 · ${_time(model.evaluatedAt)} 기준',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              TextButton(
-                onPressed: () => _modelDetails(context, ref, model),
-                child: const Text('상세 보기'),
-              ),
-            ],
-          ),
+          Text('모델 기반 예측', style: Theme.of(context).textTheme.bodySmall),
         ] else if (!isPrediction && general != null) ...[
           if (isRunning) ...[
             Row(
@@ -250,58 +251,19 @@ class RouteExplorerPanel extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              listEquals(general.routes.first.path, general.routes.last.path)
-                  ? '이 구간에서는 빠른 길과 러닝길이 같아요.'
-                  : '예상 보행 시간 기준 · 지도에 표시된 횡단만 집계',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
           ] else ...[
             Text(
               '${_duration(generalRoute!.duration)} · ${_distance(generalRoute.distanceMeters)}',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            RouteShadeInfo(
-              route: generalRoute,
-              evaluatedAt: general.evaluatedAt,
-            ),
           ],
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () => _details(context, '경로 정보', [
-                RouteResultCard(
-                  result: general,
-                  mode: isRunning ? runningMode : RouteMode.fastest,
-                  endpoints: ref.read(routeSelectionProvider).endpoints,
-                ),
-                ..._placeSources(ref),
-              ]),
-              child: const Text('상세 보기'),
-            ),
-          ),
-        ] else if (!loading && error == null)
+        ] else if (!loading && error == null && samePoint)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              canSearch
-                  ? isPrediction
-                        ? '빠른 길과 $comparisonLabel을 함께 비교해 보세요.'
-                        : isRunning
-                        ? '빠른 길과 계단·횡단이 적은 길을 비교해 보세요.'
-                        : '선택한 두 지점을 걸어서 연결해요.'
-                  : samePoint
-                  ? '출발지와 도착지를 서로 다른 위치로 선택해 주세요.'
-                  : '출발지와 도착지를 선택해 주세요.',
+              '출발지와 도착지를 서로 다른 위치로 선택해 주세요.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
-          ),
-        if (hasResult && !loading && onShowGuidance != null)
-          OutlinedButton.icon(
-            onPressed: onShowGuidance,
-            icon: const Icon(Icons.format_list_numbered),
-            label: const Text('전체 길안내'),
           ),
       ],
     );
@@ -309,9 +271,9 @@ class RouteExplorerPanel extends ConsumerWidget {
         ? Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: onPreview,
-                  child: const Text('미리보기'),
+                child: TextButton(
+                  onPressed: showDetails,
+                  child: const Text('상세 보기'),
                 ),
               ),
               const SizedBox(width: 8),
@@ -399,16 +361,6 @@ class RouteExplorerPanel extends ConsumerWidget {
         '${route.duration.inMinutes}분 ${route.duration.inSeconds % 60}초 · ${route.distanceMeters.round()}m',
         style: Theme.of(context).textTheme.titleMedium,
       ),
-      const SizedBox(height: 6),
-      Text(
-        '계단 ${_distance(route.metrics.stairsMeters!)} · 횡단 ${route.metrics.mappedCrossingCount}회',
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-      if (route.mode == RouteMode.running)
-        Text(
-          '빠른 길 대비 +${route.additionalDuration.inSeconds}초',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
     ],
   );
 
@@ -450,11 +402,6 @@ class RouteExplorerPanel extends ConsumerWidget {
           '예측 ${showSunlight ? '햇빛' : '그늘'} ${(ratio * 100).toStringAsFixed(1)}%',
           style: TextStyle(color: color.primary, fontWeight: FontWeight.w600),
         ),
-        if (route.mode == RoutePredictionMode.sunlight)
-          Text(
-            '빠른 길 대비 +${route.additionalDuration.inSeconds}초',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
       ],
     );
   }
@@ -476,7 +423,7 @@ class RouteExplorerPanel extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: children,
@@ -501,7 +448,7 @@ class RouteExplorerPanel extends ConsumerWidget {
     ModelRoutePrediction model,
   ) {
     final route = model.routes.first;
-    _details(context, '경로와 예측 안내', [
+    _details(context, ref, '경로와 예측 안내', [
       const Text('모델 기반 예측', style: TextStyle(fontWeight: FontWeight.bold)),
       const Text('건물·지형 모델 기반이며 나무·구름 등의 영향은 반영하지 않았어요.'),
       Text(
@@ -541,38 +488,62 @@ class RouteExplorerPanel extends ConsumerWidget {
     ]);
   }
 
-  void _details(BuildContext context, String title, List<Widget> children) =>
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        isScrollControlled: true,
-        builder: (sheetContext) => SafeArea(
-          child: SizedBox(
-            height: MediaQuery.sizeOf(context).height * 0.65,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 16),
-                if (onShowGuidance != null)
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(sheetContext);
-                      onShowGuidance!();
-                    },
-                    icon: const Icon(Icons.format_list_numbered),
-                    label: const Text('전체 길안내'),
-                  ),
-                for (final child in children)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: child,
-                  ),
-              ],
+  void _details(
+    BuildContext context,
+    WidgetRef ref,
+    String title,
+    List<Widget> children,
+  ) => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.65,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                onPreview();
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('미리보기'),
             ),
-          ),
+            if (onShowGuidance != null)
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  onShowGuidance!();
+                },
+                icon: const Icon(Icons.format_list_numbered),
+                label: const Text('전체 길안내'),
+              ),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                if (ref.read(routeSearchCooldownProvider) > 0) return;
+                if (ref.read(routeSearchKindProvider) ==
+                    RouteSearchKind.prediction) {
+                  ref.read(routeComparisonProvider.notifier).search();
+                } else {
+                  ref.read(routeSearchProvider.notifier).search();
+                }
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('경로 다시 검색'),
+            ),
+            const SizedBox(height: 8),
+            for (final child in children)
+              Padding(padding: const EdgeInsets.only(bottom: 12), child: child),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 
   Future<void> _pickTime(
     BuildContext context,

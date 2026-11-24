@@ -8,6 +8,7 @@ class MapSearchSheet extends StatefulWidget {
     required this.child,
     required this.scrollController,
     this.initialFraction = 0.55,
+    this.initialHeight,
     this.scrollable = true,
   });
 
@@ -15,6 +16,7 @@ class MapSearchSheet extends StatefulWidget {
   final Widget child;
   final ScrollController scrollController;
   final double initialFraction;
+  final double? initialHeight;
   final bool scrollable;
 
   @override
@@ -22,14 +24,20 @@ class MapSearchSheet extends StatefulWidget {
 }
 
 class _MapSearchSheetState extends State<MapSearchSheet> {
-  static const _minimum = 0.25;
+  static const _minimum = 0.16;
   static const _maximum = 0.8;
-  late double _fraction;
+  double? _fraction;
 
   @override
   void initState() {
     super.initState();
-    _fraction = widget.initialFraction;
+    _fraction = null;
+  }
+
+  @override
+  void didUpdateWidget(covariant MapSearchSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialHeight != widget.initialHeight) _fraction = null;
   }
 
   void _resize(double fraction) =>
@@ -39,12 +47,15 @@ class _MapSearchSheetState extends State<MapSearchSheet> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final height = constraints.maxHeight;
-      final handleHeight = (height * 0.4).clamp(0.0, 40.0);
+      final handleHeight = (height * 0.4).clamp(0.0, 24.0);
       final minimum = height > 0
           ? ((handleHeight + 24) / height).clamp(_minimum, _maximum)
           : _minimum;
-      final fraction = _fraction.clamp(minimum, _maximum);
-      final expanded = fraction > widget.initialFraction;
+      final initial = height > 0 && widget.initialHeight != null
+          ? (widget.initialHeight! / height).clamp(minimum, 0.65)
+          : widget.initialFraction;
+      final fraction = (_fraction ?? initial).clamp(minimum, _maximum);
+      final expanded = fraction > initial;
       return Column(
         children: [
           Expanded(child: widget.map),
@@ -80,9 +91,7 @@ class _MapSearchSheetState extends State<MapSearchSheet> {
                             fraction - details.delta.dy / constraints.maxHeight,
                           );
                         },
-                        onTap: () => _resize(
-                          expanded ? widget.initialFraction : _maximum,
-                        ),
+                        onTap: () => _resize(expanded ? initial : _maximum),
                         child: SizedBox(
                           height: handleHeight,
                           width: double.infinity,
@@ -104,14 +113,14 @@ class _MapSearchSheetState extends State<MapSearchSheet> {
                     child: widget.scrollable
                         ? SingleChildScrollView(
                             controller: widget.scrollController,
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                             child: SizedBox(
                               width: double.infinity,
                               child: widget.child,
                             ),
                           )
                         : Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                             child: widget.child,
                           ),
                   ),

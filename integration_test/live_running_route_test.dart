@@ -85,7 +85,7 @@ void main() {
     }
     expect(
       find.text('빠른 길 대비 +${running.additionalDuration.inSeconds}초'),
-      findsOneWidget,
+      findsNothing,
     );
 
     MapCanvas canvas() => tester.widget<MapCanvas>(find.byType(MapCanvas));
@@ -97,6 +97,11 @@ void main() {
     await _tap(tester, '러닝 추천');
     expect(canvas().routePath, running.path);
 
+    await _tap(tester, '상세 보기');
+    expect(
+      find.text('빠른 길 대비 +${running.additionalDuration.inSeconds}초'),
+      findsOneWidget,
+    );
     await _tap(tester, '전체 길안내');
     await tester.pump(const Duration(milliseconds: 400));
     final inspectIndex = running.guidance!.steps.length ~/ 2;
@@ -122,6 +127,7 @@ void main() {
     await _tapFinder(tester, find.byTooltip('전체 경로 보기'));
     expect(canvas().guidancePoints, isEmpty);
 
+    await _tap(tester, '상세 보기');
     await _tap(tester, '미리보기');
     expect(container.read(navigationProvider).isPreview, true);
     expect(

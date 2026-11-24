@@ -7,7 +7,6 @@ import '../../features/location/presentation/providers/location_notifier.dart';
 import '../../features/map/presentation/providers/map_notifier.dart';
 import '../../features/map/presentation/state/map_marker.dart';
 import '../../features/map/presentation/state/map_overlays.dart';
-import '../../features/map/presentation/widgets/shade_legend.dart';
 import '../../features/map/presentation/state/map_state.dart';
 import '../../features/map/presentation/widgets/map_canvas.dart';
 import '../../features/navigation/domain/navigation_progress.dart';
@@ -410,7 +409,7 @@ class _HomePageState extends ConsumerState<HomePage>
     });
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 48,
+        toolbarHeight: 40,
         title: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -463,11 +462,11 @@ class _HomePageState extends ConsumerState<HomePage>
               if (!nav.active)
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: constraints.maxHeight * 0.30,
+                    maxHeight: constraints.maxHeight * 0.24,
                   ),
                   child: const SingleChildScrollView(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 4, 16, 12),
+                      padding: EdgeInsets.fromLTRB(12, 0, 12, 6),
                       child: RouteInputBar(),
                     ),
                   ),
@@ -477,11 +476,22 @@ class _HomePageState extends ConsumerState<HomePage>
                   key: ValueKey(('search-panel', nav.active)),
                   scrollController: _panelScrollController,
                   scrollable: false,
-                  initialFraction: constraints.maxHeight < 400
-                      ? 0.60
-                      : nav.active
-                      ? 0.30
-                      : 0.38,
+                  initialHeight:
+                      (nav.active
+                          ? 240.0
+                          : selection.selecting != null
+                          ? 160.0
+                          : active != null
+                          ? 264.0
+                          : ref.watch(routeComparisonProvider).hasError ||
+                                ref.watch(routePredictionProvider).hasError ||
+                                ref.watch(routeSearchProvider).hasError
+                          ? 216.0
+                          : 148.0) *
+                      (MediaQuery.textScalerOf(context).scale(14) / 14).clamp(
+                        1.0,
+                        1.4,
+                      ),
                   map: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -534,24 +544,13 @@ class _HomePageState extends ConsumerState<HomePage>
                           !nav.active &&
                           selectedStep == null)
                         Positioned(
-                          left: 12,
-                          bottom: 12,
-                          right: 76,
+                          left: 8,
+                          bottom: 32,
                           child: Align(
                             alignment: Alignment.bottomLeft,
                             child: PredictionCoverageControl(
                               onShow: _showCoverage,
                             ),
-                          ),
-                        ),
-                      if (routeSegments.isNotEmpty)
-                        const Positioned(
-                          left: 12,
-                          top: 12,
-                          right: 76,
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: ShadeLegend(),
                           ),
                         ),
                       if (selectedStep != null && guidance != null)

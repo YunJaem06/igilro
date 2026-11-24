@@ -86,6 +86,46 @@ void main() {
   }
 
   testWidgets(
+    'compact panels keep the map visible and secondary actions in details',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await mount(tester);
+      expect(tester.getSize(find.byType(MapCanvas)).height, greaterThan(400));
+      await selectEntries(tester);
+      await tap(tester, '그늘길 비교');
+      expect(tester.getSize(find.byType(MapCanvas)).height, greaterThan(360));
+      expect(find.text('안내 시작').hitTestable(), findsOneWidget);
+      expect(find.text('미리보기'), findsNothing);
+      expect(find.text('전체 길안내'), findsNothing);
+      await tap(tester, '상세 보기');
+      expect(find.text('미리보기'), findsOneWidget);
+      final source = find.text(
+        predictionFor(repository.queries.last).attribution,
+      );
+      await tester.scrollUntilVisible(
+        source,
+        150,
+        scrollable: find
+            .descendant(
+              of: find.byType(BottomSheet),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(source.hitTestable(), findsOneWidget);
+      Navigator.of(tester.element(find.byType(BottomSheet))).pop();
+      await tester.pumpAndSettle();
+      await tap(tester, '안내 시작');
+      expect(tester.getSize(find.byType(MapCanvas)).height, greaterThan(480));
+      await tap(tester, '안내 종료');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'server coverage frames bounds and entry selection searches a comparable pair',
     (tester) async {
       await mount(tester);
@@ -114,7 +154,7 @@ void main() {
       expect(map(tester).routeSegments.length, 4);
       expect(map(tester).routeSegments[1].path.length, 6);
       expect(map(tester).routeSegments[1].state, MapShadeState.shade);
-      expect(find.text('예측 햇빛'), findsOneWidget);
+      expect(find.text('예측 햇빛'), findsNothing);
       await tap(tester, '빠른 길');
       expect(repository.queries.length, 2);
       expect(map(tester).alternativeRoutePath, route.path);
@@ -293,6 +333,8 @@ void main() {
           bounds: sampleCoverage().bounds.copyWith(west: 127.02),
         ),
       );
+      await tester.tap(find.byTooltip('검색 범위와 출처'));
+      await tester.pumpAndSettle();
       await tap(tester, '범위 다시 불러오기');
       expect(repository.coverageRequests, 2);
       expect(map(tester).coverage!.boundary.first.longitude, 127.02);
@@ -300,8 +342,6 @@ void main() {
         container.read(mapProvider).framedCoordinates.first.longitude,
         127.02,
       );
-      await tester.tap(find.byTooltip('검색 범위와 출처'));
-      await tester.pumpAndSettle();
       expect(find.text(sampleCoverage().attribution), findsOneWidget);
       expect(container.read(predictionCoverageProvider).hasError, false);
     },
