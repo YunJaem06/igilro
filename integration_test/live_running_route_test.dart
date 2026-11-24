@@ -9,7 +9,11 @@ import 'package:igilro/app/pages/home_page.dart';
 import 'package:igilro/core/geo/geo_coordinate.dart';
 import 'package:igilro/features/map/presentation/providers/map_notifier.dart';
 import 'package:igilro/features/map/presentation/state/map_state.dart';
+import 'package:igilro/features/map/presentation/state/map_overlays.dart';
 import 'package:igilro/features/map/presentation/widgets/map_canvas.dart';
+import 'package:igilro/features/navigation/presentation/arrival_summary_card.dart';
+import 'package:igilro/features/navigation/presentation/guidance_steps_sheet.dart';
+import 'package:igilro/features/navigation/presentation/guidance_time_card.dart';
 import 'package:igilro/features/navigation/presentation/navigation_notifier.dart';
 import 'package:igilro/features/route_search/domain/entities/route_endpoints.dart';
 import 'package:igilro/features/route_search/domain/entities/route_guidance.dart';
@@ -22,7 +26,7 @@ import 'package:igilro/features/route_search/presentation/providers/route_select
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('live running comparison selects both routes on the native map', (
+  testWidgets('live running comparison, guidance and arrival work on the map', (
     tester,
   ) async {
     bootstrap();
@@ -53,7 +57,7 @@ void main() {
           ),
         );
     await tester.pump();
-    await _tap(tester, '러닝길');
+    await _tapFinder(tester, find.widgetWithText(ChoiceChip, '러닝길'));
     await _tap(tester, '러닝길 비교');
     await _waitUntil(
       tester,
@@ -92,12 +96,52 @@ void main() {
     expect(canvas().alternativeRoutePath, running.path);
     await _tap(tester, '러닝 추천');
     expect(canvas().routePath, running.path);
+
+    await _tap(tester, '전체 길안내');
+    await tester.pump(const Duration(milliseconds: 400));
+    final inspectIndex = running.guidance!.steps.length ~/ 2;
+    final stepTile = find.byKey(ValueKey('guidance-step-$inspectIndex'));
+    await tester.scrollUntilVisible(
+      stepTile,
+      200,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('guidance-steps-list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    final gpsBefore = container.read(mapProvider).currentLocation;
+    await _tapFinder(tester, stepTile);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(GuidanceStepsSheet), findsNothing);
+    expect(
+      container.read(mapProvider).center,
+      running.guidance!.steps[inspectIndex].coordinate,
+    );
+    expect(container.read(mapProvider).currentLocation, gpsBefore);
+    expect(canvas().guidancePoints.single.role, MapGuidancePointRole.selected);
+    await _tapFinder(tester, find.byTooltip('전체 경로 보기'));
+    expect(canvas().guidancePoints, isEmpty);
+
     await _tap(tester, '미리보기');
     expect(container.read(navigationProvider).isPreview, true);
     expect(
       container.read(navigationProvider).route!.guidance,
       running.guidance,
     );
+    expect(container.read(navigationProvider).instruction, isNotNull);
+    expect(find.byType(GuidanceTimeCard), findsOneWidget);
+    expect(find.textContaining('도착 예정'), findsOneWidget);
+    await _waitUntil(
+      tester,
+      () => container.read(navigationProvider).status == GuidanceStatus.arrived,
+    );
+    expect(find.byType(ArrivalSummaryCard), findsOneWidget);
+    expect(find.text('경로 미리보기가 끝났어요'), findsOneWidget);
+    expect(find.byType(GuidanceTimeCard), findsNothing);
+    await _tapFinder(tester, find.byKey(const Key('arrival-finish')));
+    expect(container.read(navigationProvider).active, false);
+    expect(container.read(navigationProvider).session, isNull);
+    expect(find.text('안내 시작'), findsOneWidget);
     expect(tester.takeException(), isNull);
     debugPrint(
       'IGILRO_RUNNING_COMPARISON fastest=${fastest.distanceMeters}m/${fastest.duration.inSeconds}s/'
@@ -107,12 +151,14 @@ void main() {
   });
 }
 
-Future<void> _tap(WidgetTester tester, String text) async {
-  final finder = find.text(text);
+Future<void> _tap(WidgetTester tester, String text) =>
+    _tapFinder(tester, find.text(text));
+
+Future<void> _tapFinder(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
   await tester.tap(finder);
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
 }
 
 Future<void> _waitUntil(WidgetTester tester, bool Function() ready) async {

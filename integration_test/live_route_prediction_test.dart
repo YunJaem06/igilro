@@ -70,7 +70,7 @@ void main() {
       ]) {
         var selectedPair = pair;
         if (mode == RoutePredictionMode.sunlight) {
-          await _tap(tester, find.text('햇빛 받으며'));
+          await _tap(tester, find.widgetWithText(ChoiceChip, '햇빛 받으며'));
           await _tap(tester, find.text('햇빛길 비교'));
           await _waitUntil(
             tester,
@@ -191,9 +191,9 @@ void main() {
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
   await tester.tap(finder);
-  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
 }
 
 Future<void> _waitUntil(WidgetTester tester, bool Function() complete) async {
