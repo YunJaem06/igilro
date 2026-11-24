@@ -242,7 +242,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(canvas(tester).guidancePoints, isEmpty);
-      expect(find.text('전체 길안내'), findsOneWidget);
+      expect(find.text('전체 길안내'), findsNothing);
+      expect(find.text('상세 보기'), findsOneWidget);
       container.read(navigationProvider.notifier).stop();
       await tester.pumpAndSettle();
     },

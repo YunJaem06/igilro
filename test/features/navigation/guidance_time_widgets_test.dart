@@ -176,6 +176,9 @@ void main() {
       expect(find.byType(GuidanceTimeCard), findsNothing);
       expect(find.text('목적지에 도착했어요'), findsOneWidget);
       expect(find.text('경로 거리'), findsOneWidget);
+      expect(find.text('안내 진행 시간'), findsNothing);
+      await tester.tap(find.text('상세 보기'));
+      await tester.pumpAndSettle();
       expect(find.text('안내 진행 시간'), findsOneWidget);
       expect(find.text('1분 15초'), findsOneWidget);
       expect(find.textContaining('2026년 11월 1일'), findsOneWidget);
@@ -183,9 +186,9 @@ void main() {
       expect(find.textContaining('남았어요'), findsNothing);
       await tester.pump(const Duration(minutes: 10));
       expect(find.text('1분 15초'), findsOneWidget);
-      await tester.ensureVisible(find.byKey(const Key('arrival-finish')));
+      await tester.ensureVisible(find.byKey(const Key('arrival-finish')).last);
       await tester.pump();
-      await tester.tap(find.byKey(const Key('arrival-finish')));
+      await tester.tap(find.byKey(const Key('arrival-finish')).last);
       await tester.pumpAndSettle();
       expect(container.read(navigationProvider).active, false);
       expect(container.read(navigationProvider).session, isNull);
@@ -214,8 +217,14 @@ void main() {
         ),
       );
       expect(find.byType(GuidanceTimeCard), findsOneWidget);
+      expect(find.text('실제 보행 기준 예상이며 미리보기 속도와 달라요.'), findsNothing);
+      await tester.ensureVisible(find.text('상세 보기'));
+      await tester.tap(find.text('상세 보기'));
+      await tester.pumpAndSettle();
       expect(find.text('실제 보행 기준 예상이며 미리보기 속도와 달라요.'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      Navigator.of(tester.element(find.text('안내 상세'))).pop();
+      await tester.pumpAndSettle();
       (container.read(navigationProvider.notifier) as _FixedNavigation).replace(
         GuidanceState(
           status: GuidanceStatus.arrived,
@@ -230,12 +239,16 @@ void main() {
       expect(find.text('경로 미리보기가 끝났어요'), findsOneWidget);
       expect(find.text('안내 진행 시간'), findsNothing);
       expect(find.text('도착 시각'), findsNothing);
+      expect(find.text('가상 이동 결과'), findsOneWidget);
+      await tester.ensureVisible(find.text('상세 보기'));
+      await tester.tap(find.text('상세 보기'));
+      await tester.pumpAndSettle();
       expect(find.text('경로 예상 시간'), findsOneWidget);
       expect(find.text('가상 이동 결과입니다. 실제 이동 시간과 거리를 기록하지 않아요.'), findsOneWidget);
-      await tester.ensureVisible(find.byKey(const Key('arrival-finish')));
+      await tester.ensureVisible(find.byKey(const Key('arrival-finish')).last);
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const Key('arrival-finish')).hitTestable(),
+        find.byKey(const Key('arrival-finish')).last.hitTestable(),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);

@@ -9,18 +9,20 @@ class GuidanceInstructionCard extends StatelessWidget {
     super.key,
     required this.instruction,
     required this.metadataStatus,
+    this.compact = false,
   });
 
   final NavigationInstruction instruction;
   final GuidanceMetadataStatus metadataStatus;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final step = instruction.step;
     final crossing = step.crossing;
     return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(top: compact ? 0 : 12),
+      padding: EdgeInsets.all(compact ? 10 : 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
@@ -44,8 +46,8 @@ class GuidanceInstructionCard extends StatelessWidget {
                   step.instruction,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                if (step.streetName != null) Text(step.streetName!),
-                if (crossing != null) ...[
+                if (!compact && step.streetName != null) Text(step.streetName!),
+                if (!compact && crossing != null) ...[
                   const SizedBox(height: 8),
                   Text(switch (crossing.trafficSignals) {
                     true => '지도 정보: 횡단 신호등 있음',
@@ -54,7 +56,8 @@ class GuidanceInstructionCard extends StatelessWidget {
                   }),
                   const Text('현재 신호 상태는 제공하지 않아요.'),
                 ],
-                if (metadataStatus != GuidanceMetadataStatus.osmTags) ...[
+                if (!compact &&
+                    metadataStatus != GuidanceMetadataStatus.osmTags) ...[
                   const SizedBox(height: 8),
                   Text(
                     metadataStatus == GuidanceMetadataStatus.topologyOnly

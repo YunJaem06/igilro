@@ -174,10 +174,7 @@ void main() {
         );
         expect(find.byType(ArrivalSummaryCard), findsOneWidget);
         expect(find.text('경로 미리보기가 끝났어요'), findsOneWidget);
-        expect(
-          find.text('가상 이동 결과입니다. 실제 이동 시간과 거리를 기록하지 않아요.'),
-          findsOneWidget,
-        );
+        expect(find.text('가상 이동 결과'), findsOneWidget);
         expect(find.byType(GuidanceTimeCard), findsNothing);
         expect(
           container.read(navigationProvider).session!.completedAt,

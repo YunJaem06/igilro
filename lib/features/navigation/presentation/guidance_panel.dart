@@ -7,6 +7,7 @@ import 'navigation_notifier.dart';
 import 'guidance_instruction_card.dart';
 import 'guidance_time_card.dart';
 import 'arrival_summary_card.dart';
+import 'guidance_details_sheet.dart';
 
 class GuidancePanel extends ConsumerWidget {
   const GuidancePanel({
@@ -29,6 +30,7 @@ class GuidancePanel extends ConsumerWidget {
         isPreview: state.isPreview,
         onDone: notifier.stop,
         onShowGuidance: onShowGuidance,
+        compact: true,
       );
     }
     final text = state.isPreview
@@ -59,21 +61,24 @@ class GuidancePanel extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.navigation_rounded, color: Color(0xFF23785C)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(text, style: Theme.of(context).textTheme.titleMedium),
-            ),
-          ],
-        ),
-        if (estimate != null)
-          GuidanceTimeCard(estimate: estimate, isPreview: state.isPreview),
+        if (state.isPreview || instruction == null)
+          Row(
+            children: [
+              const Icon(Icons.navigation_rounded, color: Color(0xFF23785C)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
         if (instruction != null)
           GuidanceInstructionCard(
             instruction: instruction,
             metadataStatus: state.route!.guidance!.metadataStatus,
+            compact: true,
           )
         else if (state.status == GuidanceStatus.following) ...[
           const SizedBox(height: 8),
@@ -83,26 +88,28 @@ class GuidancePanel extends ConsumerWidget {
                 : '단계별 안내 정보가 없어 경로 진행 상황만 표시해요.',
           ),
         ],
-        if (remaining != null && state.hasReliableProgress) ...[
-          const SizedBox(height: 8),
-          Text(
-            remaining < 1000
-                ? '${remaining.round()}m 남았어요'
-                : '${(remaining / 1000).toStringAsFixed(1)}km 남았어요',
-            style: Theme.of(context).textTheme.headlineSmall,
+        if (estimate != null)
+          GuidanceTimeCard(
+            estimate: estimate,
+            isPreview: state.isPreview,
+            compact: true,
+            remainingMeters: state.hasReliableProgress ? remaining : null,
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(value: state.progress!.fraction),
-        ],
-        const SizedBox(height: 12),
-        if (onShowGuidance != null)
-          OutlinedButton.icon(
-            onPressed: onShowGuidance,
-            icon: const Icon(Icons.format_list_numbered),
-            label: const Text('전체 길안내'),
-          ),
+        const SizedBox(height: 4),
         Row(
           children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  showDragHandle: true,
+                  isScrollControlled: true,
+                  builder: (_) =>
+                      GuidanceDetailsSheet(onShowGuidance: onShowGuidance),
+                ),
+                child: const Text('상세 보기'),
+              ),
+            ),
             Expanded(
               child: TextButton(
                 onPressed: notifier.stop,
